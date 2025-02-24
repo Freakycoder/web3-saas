@@ -6,13 +6,15 @@ declare_id!("FNUwDxfH4cwnM4HSkNxDivN4o5n7U17fVMchqrtkTJBp");
 pub mod contracts {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        msg!("Greetings from: {:?}", ctx.program_id);
+    pub fn initialize_poll(ctx : Context<InitializePoll>, _poll_id : u64) -> Result<()>{
         Ok(())
     }
+    
 }
 
 #[derive(Accounts)]
-pub struct Initialize {
+pub struct InitializePoll{
     
 }
+
+

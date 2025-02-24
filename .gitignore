@@ -57,3 +57,12 @@ coverage/
 # Docker
 .dockerignore
 docker-compose.override.yml
+
+#Rust
+.anchor
+.DS_Store
+target
+**/*.rs.bk
+node_modules
+test-ledger
+.yarn
