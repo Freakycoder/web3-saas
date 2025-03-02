@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::system_instruction;
 
 declare_id!("FNUwDxfH4cwnM4HSkNxDivN4o5n7U17fVMchqrtkTJBp");
 
@@ -21,11 +22,30 @@ pub mod contracts {
         Ok(())
     }
 
-    pub fn initialize_vault(ctx : Context<InitializeVaultPda>, program_id : Pubkey) -> Result<()>{
+    pub fn initialize_vault(ctx: Context<InitializeVaultPda>, program_id: Pubkey) -> Result<()> {
+        let vault = &mut ctx.accounts.vault_pda;
+        vault.vault_amount = 0;
         Ok(())
     }
 
-    pub fn stake(ctx: Context<StakedAccounts>) -> Result<()> {
+    pub fn stake(ctx: Context<StakedAccounts>, amount : u64, vault_bump : u8) -> Result<()> {
+        let user_account = &mut ctx.accounts.user;
+        let vault = &mut ctx.accounts.vault;
+        let user_pda = &mut ctx.accounts.user_pda;
+
+        let ix = system_instruction::transfer(&user_account.key(), &vault.key(), amount);
+
+        anchor_lang::solana_program::program::invoke_signed(&ix, &[
+            user_account.to_account_info(),
+            vault.to_account_info(),
+            ctx.accounts.system_program.to_account_info()
+        ],  &[&[b"vault", &[vault_bump]]])?;
+
+        user_pda.user_amount = amount;
+        Ok(())
+    }
+
+    pub fn release_funds(ctx : Context<UnStackAccouts> , amount : u64, vault_bump : u8) -> Result<()>{
         Ok(())
     }
 }
@@ -58,15 +78,21 @@ pub struct InitializeVaultPda<'info> {
         seeds = [b"user".as_ref(), program_id.as_ref() ],
         bump
     )]
-    pub vault_pda: Account<'info, UserPda>,
+    pub vault_pda: Account<'info, Vault>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-#[instruction(program_id : Pubkey)]
+#[instruction(program_id : Pubkey, user_pubkey : Pubkey)]
 pub struct StakedAccounts<'info> {
     #[account(mut)]
-    pub signer: Signer<'info>,
+    pub user: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [b"user".as_ref(),user_pubkey.as_ref() ],
+        bump
+    )]
+    pub user_pda: Account<'info, UserPda>,
     #[account(
         mut,
         seeds = [b"vault".as_ref(), program_id.as_ref()],
@@ -74,6 +100,12 @@ pub struct StakedAccounts<'info> {
     )]
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UnStackAccouts<'info>{
+    #[account(mut)]
+    pub signer : Signer<'info>
 }
 
 #[account]
