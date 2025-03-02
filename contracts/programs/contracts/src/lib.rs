@@ -28,24 +28,45 @@ pub mod contracts {
         Ok(())
     }
 
-    pub fn stake(ctx: Context<StakedAccounts>, amount : u64, vault_bump : u8) -> Result<()> {
+    pub fn stake_funds(ctx: Context<StakedAccounts>, amount: u64, vault_bump: u8) -> Result<()> {
         let user_account = &mut ctx.accounts.user;
         let vault = &mut ctx.accounts.vault;
         let user_pda = &mut ctx.accounts.user_pda;
 
-        let ix = system_instruction::transfer(&user_account.key(), &vault.key(), amount);
+        let ix = system_instruction::transfer(&user_account.key(), &vault.key(), amount); // ix stands for instruction.
 
-        anchor_lang::solana_program::program::invoke_signed(&ix, &[
-            user_account.to_account_info(),
-            vault.to_account_info(),
-            ctx.accounts.system_program.to_account_info()
-        ],  &[&[b"vault", &[vault_bump]]])?;
+        solana_program::program::invoke_signed(
+            &ix,
+            &[
+                user_account.to_account_info(),
+                vault.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+            &[&[b"vault", &[vault_bump]]],
+        )?;
 
-        user_pda.user_amount = amount;
+        user_pda.user_amount += amount;
         Ok(())
     }
 
-    pub fn release_funds(ctx : Context<UnStackAccouts> , amount : u64, vault_bump : u8) -> Result<()>{
+    pub fn release_funds(ctx: Context<UnStackAccouts>, amount: u64, vault_bump: u8) -> Result<()> {
+        let user_account = &mut ctx.accounts.user;
+        let vault = &mut ctx.accounts.vault;
+        let user_pda = &mut ctx.accounts.user_pda;
+
+        let ix = system_instruction::transfer(&vault.key(), &user_account.key(), amount);
+
+        solana_program::program::invoke_signed(
+            &ix,
+            &[
+                vault.to_account_info(),
+                user_account.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+            &[&[b"vault", &[vault_bump]]],
+        )?;
+
+        user_pda.user_amount -= amount;
         Ok(())
     }
 }
@@ -103,9 +124,23 @@ pub struct StakedAccounts<'info> {
 }
 
 #[derive(Accounts)]
-pub struct UnStackAccouts<'info>{
+#[instruction(user_pubkey : Pubkey, program_id : Pubkey)]
+pub struct UnStackAccouts<'info> {
     #[account(mut)]
-    pub signer : Signer<'info>
+    pub user: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [b"user".as_ref(),user_pubkey.as_ref()],
+        bump
+    )]
+    pub user_pda: Account<'info, UserPda>,
+    #[account(
+        mut,
+        seeds = [b"vault".as_ref(), program_id.as_ref()],
+        bump
+    )]
+    pub vault: Account<'info, Vault>,
+    pub system_program: Program<'info, System>,
 }
 
 #[account]
