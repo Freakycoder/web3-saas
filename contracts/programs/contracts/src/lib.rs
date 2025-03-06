@@ -9,13 +9,13 @@ pub mod contracts {
 
     pub fn initialize_user_pda(
         ctx: Context<InitializeUserPda>,
-        user_pubkey: Pubkey,
+        user_id: u64,
         amount: u64,
         is_active: bool,
         is_completed: bool,
     ) -> Result<()> {
         let user_pda = &mut ctx.accounts.user_pda;
-        user_pda.user_pubkey = user_pubkey;
+        user_pda.user_id = user_id;
         user_pda.user_amount = amount;
         user_pda.is_active = is_active;
         user_pda.is_completed = is_completed;
@@ -28,7 +28,13 @@ pub mod contracts {
         Ok(())
     }
 
-    pub fn stake_funds(ctx: Context<StakedAccounts>, amount: u64, vault_bump: u8) -> Result<()> {
+    pub fn stake_funds(
+        ctx: Context<StakedAccounts>,
+        amount: u64,
+        vault_bump: u8,
+        program_id: Pubkey,
+        user_id: u64,
+    ) -> Result<()> {
         let user_account = &mut ctx.accounts.user;
         let vault = &mut ctx.accounts.vault;
         let user_pda = &mut ctx.accounts.user_pda;
@@ -42,14 +48,14 @@ pub mod contracts {
                 vault.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
-            &[&[b"vault", &[vault_bump]]],
+            &[&[b"vault", program_id.as_ref(), &[vault_bump]]],
         )?;
 
         user_pda.user_amount += amount;
         Ok(())
     }
 
-    pub fn release_funds(ctx: Context<UnStackAccouts>, amount: u64, vault_bump: u8) -> Result<()> {
+    pub fn release_funds(ctx: Context<UnStackAccouts>, amount: u64, vault_bump: u8, program_id: Pubkey) -> Result<()> {
         let user_account = &mut ctx.accounts.user;
         let vault = &mut ctx.accounts.vault;
         let user_pda = &mut ctx.accounts.user_pda;
@@ -63,7 +69,7 @@ pub mod contracts {
                 user_account.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
-            &[&[b"vault", &[vault_bump]]],
+            &[&[b"vault",program_id.as_ref(), &[vault_bump]]],
         )?;
 
         user_pda.user_amount -= amount;
@@ -72,7 +78,7 @@ pub mod contracts {
 }
 
 #[derive(Accounts)]
-#[instruction(user_pubkey : Pubkey)]
+#[instruction(user_id : u64)]
 pub struct InitializeUserPda<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -80,7 +86,7 @@ pub struct InitializeUserPda<'info> {
         init,
         payer = signer,
         space = 8 + UserPda::INIT_SPACE,
-        seeds = [b"user".as_ref(), user_pubkey.as_ref() ],
+        seeds = [b"user".as_ref(), &user_id.to_le_bytes().as_ref() ],
         bump
     )]
     pub user_pda: Account<'info, UserPda>,
@@ -96,7 +102,7 @@ pub struct InitializeVaultPda<'info> {
         init,
         payer = signer,
         space = 8 + Vault::INIT_SPACE,
-        seeds = [b"user".as_ref(), program_id.as_ref() ],
+        seeds = [b"vault".as_ref(), program_id.as_ref() ],
         bump
     )]
     pub vault_pda: Account<'info, Vault>,
@@ -104,13 +110,13 @@ pub struct InitializeVaultPda<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(program_id : Pubkey, user_pubkey : Pubkey)]
+#[instruction(program_id : Pubkey, user_id : u64)]
 pub struct StakedAccounts<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"user".as_ref(),user_pubkey.as_ref() ],
+        seeds = [b"user".as_ref(), &user_id.to_le_bytes().as_ref() ],
         bump
     )]
     pub user_pda: Account<'info, UserPda>,
@@ -124,13 +130,13 @@ pub struct StakedAccounts<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(user_pubkey : Pubkey, program_id : Pubkey)]
+#[instruction(user_id : u64, program_id : Pubkey)]
 pub struct UnStackAccouts<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"user".as_ref(),user_pubkey.as_ref()],
+        seeds = [b"user".as_ref(), &user_id.to_le_bytes().as_ref()],
         bump
     )]
     pub user_pda: Account<'info, UserPda>,
@@ -146,7 +152,7 @@ pub struct UnStackAccouts<'info> {
 #[account]
 #[derive(InitSpace)]
 pub struct UserPda {
-    pub user_pubkey: Pubkey,
+    pub user_id: u64,
     pub user_amount: u64,
     pub is_active: bool,
     pub is_completed: bool,
