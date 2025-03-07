@@ -22,7 +22,7 @@ describe("contracts", () => {
     provider = new BankrunProvider(context);
     stakeProgram = new Program<Contracts>(ContractIDL as Contracts, provider);
     walletAddress = provider.wallet.publicKey;
-    [user_pda_address] = PublicKey.findProgramAddressSync([Buffer.from("user"), userId.toArrayLike(Buffer, "le", 8)], contractAddress);
+    [user_pda_address] = PublicKey.findProgramAddressSync([Buffer.from("user"), userId.toBuffer("le", 8)], contractAddress);
     [vault_pda, vault_bump] = PublicKey.findProgramAddressSync([Buffer.from("vault"), contractAddress.toBuffer()], contractAddress);
   })
 
@@ -59,9 +59,11 @@ describe("contracts", () => {
 
     const vault_amount = await stakeProgram.account.vault.fetch(vault_pda);
     console.log("initial vault balance:", vault_amount.vaultAmount);
-    console.log("inital user wallet amount(SOL): ", await context.banksClient.getBalance(walletAddress));
-
-
+    const InitialBalance = await context.banksClient.getBalance(vault_pda);
+    const initialSol = Number(InitialBalance) / 1_000_000_000;
+    console.log("initial vault lamport balance: ", initialSol)
+    const initialUserSOL = await context.banksClient.getBalance(walletAddress)
+    console.log("inital user wallet amount(SOL): ", Number(initialUserSOL));
   })
 
   it("user stake funds", async () => {
@@ -76,9 +78,13 @@ describe("contracts", () => {
       ).rpc()
 
     console.log("transaction signature for stake funds", tx2);
-    console.log("final user wallet amount(SOL)", await context.banksClient.getBalance(walletAddress));
+    const finalUserSOL = await context.banksClient.getBalance(walletAddress)
+    console.log("inital user wallet amount(SOL): ", Number(finalUserSOL));
     const final_vault_amount = await stakeProgram.account.vault.fetch(vault_pda);
-    console.log("final vault amount", final_vault_amount.vaultAmount);
+    console.log("final vault amount", Number(final_vault_amount.vaultAmount));
+    const finalBalance = await context.banksClient.getBalance(vault_pda);
+    const finalSol = Number(finalBalance) / 1_000_000_000;
+    console.log("final vault lamport balance: ", finalSol);
   })
 
 });

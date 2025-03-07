@@ -52,6 +52,7 @@ pub mod contracts {
         )?;
 
         user_pda.user_amount += amount;
+        vault.vault_amount += amount; 
         Ok(())
     }
 
@@ -73,6 +74,7 @@ pub mod contracts {
         )?;
 
         user_pda.user_amount -= amount;
+        vault.vault_amount -= amount; 
         Ok(())
     }
 }
@@ -110,7 +112,7 @@ pub struct InitializeVaultPda<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(program_id : Pubkey, user_id : u64)]
+#[instruction(amount: u64, vault_bump: u8, program_id : Pubkey, user_id : u64)]
 pub struct StakedAccounts<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
