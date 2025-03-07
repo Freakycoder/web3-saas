@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { client } from "../db";
-import { taskSchema } from "../types";
+import { submissionSchema, taskSchema, updateBalanceSchema } from "../types";
 import { userMiddleware } from "../middleware";
 import nacl from "tweetnacl"
 import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
@@ -8,7 +8,6 @@ import jwt from "jsonwebtoken"
 import { secreatKey } from "../middleware";
 import { S3Client } from "@aws-sdk/client-s3";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
-import { sign } from "crypto";
 
 export const userRouter = Router();
 
@@ -85,6 +84,7 @@ userRouter.post('/task', userMiddleware, async (req, res) => {
             res.status(404).json({ message: "invalid data" })
             return
         }
+        const taskDeadline = parsedData.data?.task_deadline_time!;
 
         const response = await client.$transaction(async tx => {
 
@@ -95,7 +95,9 @@ userRouter.post('/task', userMiddleware, async (req, res) => {
                     user_id: user_id,
                     done: parsedData.data?.done ?? false,
                     amount: parsedData.data?.amount!,
-                    Signature: parsedData.data?.signature!
+                    Signature: parsedData.data?.signature!,
+                    task_creation_time: new Date(),
+                    task_deadline_time: new Date(Date.now() + taskDeadline * 24 * 60 * 60 * 1000) // its basically 7 days from now
                 }
             })
 
@@ -141,6 +143,33 @@ userRouter.get('/task', userMiddleware, (req, res) => {
     }
 });
 
+userRouter.post('/submission', userMiddleware, async (req, res) => {
+    const submission = req.body;
+    const parsedData = submissionSchema.safeParse(submission);
+    //@ts-ignore
+    const user_id = req.user_id;
+
+    if (!parsedData) {
+        res.status(400).json({ message: "invalid submission data" })
+        return
+    }
+
+    try {
+        const submit = await client.submission.create({
+            data: {
+                user_id: user_id,
+                option_id: parsedData.data?.selection!,
+                task_id: parsedData.data?.task_id!
+            }
+        })
+
+        res.status(200).json({ message: `submission done ${submit}` })
+    }
+    catch (e) {
+        res.status(404).json({ message: `submission failed` })
+    }
+});
+
 userRouter.get('/presignedURLS', async (req, res) => {
 
     const data = req.params;
@@ -178,8 +207,8 @@ userRouter.post('/confirmation', userMiddleware, async (req, res) => {
             }
         })
 
-        if(!User){
-            res.status(403).json({message : "wallet doesn't exist, please connect/signIn"})
+        if (!User) {
+            res.status(403).json({ message: "wallet doesn't exist, please connect/signIn" })
             return
         }
 
@@ -220,4 +249,38 @@ userRouter.post('/confirmation', userMiddleware, async (req, res) => {
         res.status(404).json({ message: 'transaction not confirmed for some reason' })
     }
 
+})
+
+userRouter.put('/updateBalance', userMiddleware, (req, res) => {
+    const balance = req.body;
+    //@ts-ignore
+    const user_id = req.user_id;
+
+    const parsedData = updateBalanceSchema.safeParse(balance);
+
+    if (!parsedData) {
+        res.status(403).json({ message: "invalid data" });
+        return
+    }
+
+    try {
+
+        const updatedBalance = client.user.update({
+            where: {
+                id: user_id
+            },
+            data: {
+                locked_amount: {
+                    decrement: parsedData.data?.locked_amount
+                }
+            }
+        })
+
+        res.status(200).json({
+            message: "balance updated succesfully",
+            balance: updatedBalance
+        })
+    } catch (e) {
+        res.status(403).json({ message: 'unsuccesfull updation' })
+    }
 })

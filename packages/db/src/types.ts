@@ -7,7 +7,8 @@ export const taskSchema = z.object({
     options: z.array(z.object({ image_url: z.string() })).min(2),
     amount: z.number(),
     done: z.boolean(),
-    signature: z.string()
+    signature: z.string(),
+    task_deadline_time : z.number()
 });
 
 export const submissionSchema = z.object({

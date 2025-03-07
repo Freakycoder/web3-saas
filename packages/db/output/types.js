@@ -12,7 +12,8 @@ exports.taskSchema = zod_1.default.object({
     options: zod_1.default.array(zod_1.default.object({ image_url: zod_1.default.string() })).min(2),
     amount: zod_1.default.number(),
     done: zod_1.default.boolean(),
-    signature: zod_1.default.string()
+    signature: zod_1.default.string(),
+    task_deadline_time: zod_1.default.number()
 });
 exports.submissionSchema = zod_1.default.object({
     task_id: zod_1.default.string(),

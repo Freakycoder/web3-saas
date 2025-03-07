@@ -8,7 +8,8 @@ import { StepThree } from "./StepThree";
 interface FormData {
     title: string;
     description: string;
-    amount: number;
+    amount: number; 
+    // add completionTime field also, just need the days in number.
     transactionSignature: string;
 }
 
