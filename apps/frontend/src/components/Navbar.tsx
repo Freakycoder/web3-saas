@@ -1,19 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
-import { IconWallet, IconSquareRoundedPlus } from "@tabler/icons-react"
+import { IconWallet, IconSquareRoundedPlus, IconShoppingBag, IconClipboardList, IconChevronDown } from "@tabler/icons-react"
 import Link from "next/link";
 import { MultiStepForm } from './MultiStepForm'
 import { Modal } from './Modal'
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
 import axios from "axios";
+import { useRouter } from "next/router";
 
 
 export const Navbar = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { connected, signMessage, publicKey } = useWallet();
+    const [isTaskDropdownOpen, setIsTaskDropdownOpen] = useState(false);
     const [isClient, setIsClient] = useState(false);
+    const router = useRouter()
+    const userData = {
+        name: "John Doe",
+        avatar: "/turborepo/apps/frontend/public/profile-placeholder.png"
+      };
+      const handleGetStarted = () => {
+        router.push('/home');
+      };
 
     useEffect(() => {
         const authenticateUser = async () => {
@@ -52,23 +62,31 @@ export const Navbar = () => {
 
     return (
         <nav className="w-full bg-[#FDF8F4] shadow-md py-4 px-8 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800"><Link href={'turborepo/apps/frontend/public/logo.png'} /></h1>
-            <div className="flex items-center gap-4">
-
-                <div>
-                    <button
-                        className="bg-orange-500 hover:bg-orange-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition"
-                        onClick={() => setIsModalOpen(true)}
-                    >
-                        <IconSquareRoundedPlus size={22} /> Create
-                    </button>
-                    <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                        <MultiStepForm />
-                    </Modal>
-                </div>
-                {/* apply the logic mentioned by GPT to make the connect button UX better */}
-                {isClient && <WalletMultiButton className="bg-purple-500 hover:bg-purple-700 text-white text-md px-6 py-6 rounded-lg transition-all"><IconWallet size={22} /> Connect</WalletMultiButton>}
-            </div>
+          {/* Logo */}
+          <h1 className="text-2xl font-bold text-gray-800">
+            <Link href="/">
+              <img src="/turborepo/apps/frontend/public/logo.png" alt="Logo" className="h-10" />
+            </Link>
+          </h1>
+          
+          {/* Right-side buttons */}
+          <div className="flex items-center gap-4">
+            {/* Get Started Button */}
+            <button
+              className="bg-orange-500 hover:bg-orange-700 text-white px-6 py-3 rounded-lg transition"
+              onClick={handleGetStarted}
+            >
+              Get Started
+            </button>
+            
+            {/* Wallet Connect Button */}
+            {isClient && (
+              <WalletMultiButton className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition">
+                <IconWallet size={18} />
+                <span>Connect</span>
+              </WalletMultiButton>
+            )}
+          </div>
         </nav>
-    );
+      );
 }

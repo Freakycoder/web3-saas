@@ -13,7 +13,8 @@ export const taskSchema = z.object({
 
 export const submissionSchema = z.object({
     task_id : z.string(),
-    selection : z.number()
+    selection : z.number(),
+    completion_time : z.number()
 })
 
 export const updateBalanceSchema = z.object({

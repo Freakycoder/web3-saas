@@ -17,7 +17,8 @@ exports.taskSchema = zod_1.default.object({
 });
 exports.submissionSchema = zod_1.default.object({
     task_id: zod_1.default.string(),
-    selection: zod_1.default.number()
+    selection: zod_1.default.number(),
+    completion_time: zod_1.default.number()
 });
 exports.updateBalanceSchema = zod_1.default.object({
     locked_amount: zod_1.default.number()

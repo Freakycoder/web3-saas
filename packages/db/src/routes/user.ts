@@ -159,7 +159,9 @@ userRouter.post('/submission', userMiddleware, async (req, res) => {
             data: {
                 user_id: user_id,
                 option_id: parsedData.data?.selection!,
-                task_id: parsedData.data?.task_id!
+                task_id: parsedData.data?.task_id!,
+                submission_date: new Date(),
+                completion_time: parsedData.data?.completion_time!
             }
         })
 
@@ -282,5 +284,67 @@ userRouter.put('/updateBalance', userMiddleware, (req, res) => {
         })
     } catch (e) {
         res.status(403).json({ message: 'unsuccesfull updation' })
+    }
+})
+
+userRouter.post('/manageReputation', userMiddleware, async (req, res) => {
+
+    const oneWeekago = new Date();
+    oneWeekago.setDate(oneWeekago.getDate() - 7);
+    //@ts-ignore
+    const user_id = req.user_id;
+    const userSubmissions = await client.submission.findMany({
+        where: {
+            id: user_id,
+            submission_date: {
+                gte: oneWeekago
+            }
+        }
+    })
+
+    if (userSubmissions.length >= 3) {
+
+        let correctSubmissionCount = 0;
+        let totalSubmissionCount = userSubmissions.length;
+
+        userSubmissions.map((submission)=>{
+            if(submission.completion_time >= 30){
+                correctSubmissionCount += 1
+            }
+        });
+    
+        let reputationIncrease = 0;
+        let reputationDecrease = (totalSubmissionCount - correctSubmissionCount) * 5;
+    
+        if (correctSubmissionCount == 3) {
+            reputationIncrease = 10;
+        } else if (correctSubmissionCount == 5) {
+            reputationIncrease = 20;
+        } else if (correctSubmissionCount > 5) {
+            reputationIncrease = 30;
+        }
+    
+        if (reputationIncrease > 0) {
+            await client.user.update({
+                where: { id: user_id },
+                data: {
+                    reputation: { increment: reputationIncrease }
+                }
+            });
+            return
+        }
+
+        if(reputationDecrease > 0 ){
+            await client.user.update({
+                where: { id: user_id },
+                data: {
+                    reputation: { decrement: reputationDecrease }
+                }
+            });
+            return
+        }
+    } // anything below 3 submissions must not be given any points
+    else {
+        return
     }
 })

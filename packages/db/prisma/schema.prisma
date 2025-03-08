@@ -49,6 +49,7 @@ model Submission {
   option_id Int
   task_id   String
   task      Task   @relation(fields: [task_id], references: [id])
-
+  submission_date DateTime
+  completion_time Int
   @@unique([user_id, task_id])
 }

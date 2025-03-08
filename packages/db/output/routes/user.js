@@ -138,7 +138,7 @@ exports.userRouter.get('/task', middleware_1.userMiddleware, (req, res) => {
     }
 });
 exports.userRouter.post('/submission', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c;
     const submission = req.body;
     const parsedData = types_1.submissionSchema.safeParse(submission);
     //@ts-ignore
@@ -152,7 +152,9 @@ exports.userRouter.post('/submission', middleware_1.userMiddleware, (req, res) =
             data: {
                 user_id: user_id,
                 option_id: (_a = parsedData.data) === null || _a === void 0 ? void 0 : _a.selection,
-                task_id: (_b = parsedData.data) === null || _b === void 0 ? void 0 : _b.task_id
+                task_id: (_b = parsedData.data) === null || _b === void 0 ? void 0 : _b.task_id,
+                submission_date: new Date(),
+                completion_time: (_c = parsedData.data) === null || _c === void 0 ? void 0 : _c.completion_time
             }
         });
         res.status(200).json({ message: `submission done ${submit}` });
@@ -260,3 +262,58 @@ exports.userRouter.put('/updateBalance', middleware_1.userMiddleware, (req, res)
         res.status(403).json({ message: 'unsuccesfull updation' });
     }
 });
+exports.userRouter.post('/manageReputation', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const oneWeekago = new Date();
+    oneWeekago.setDate(oneWeekago.getDate() - 7);
+    //@ts-ignore
+    const user_id = req.user_id;
+    const userSubmissions = yield db_1.client.submission.findMany({
+        where: {
+            id: user_id,
+            submission_date: {
+                gte: oneWeekago
+            }
+        }
+    });
+    if (userSubmissions.length >= 3) {
+        let correctSubmissionCount = 0;
+        let totalSubmissionCount = userSubmissions.length;
+        userSubmissions.map((submission) => {
+            if (submission.completion_time >= 30) {
+                correctSubmissionCount += 1;
+            }
+        });
+        let reputationIncrease = 0;
+        let reputationDecrease = (totalSubmissionCount - correctSubmissionCount) * 5;
+        if (correctSubmissionCount == 3) {
+            reputationIncrease = 10;
+        }
+        else if (correctSubmissionCount == 5) {
+            reputationIncrease = 20;
+        }
+        else if (correctSubmissionCount > 5) {
+            reputationIncrease = 30;
+        }
+        if (reputationIncrease > 0) {
+            yield db_1.client.user.update({
+                where: { id: user_id },
+                data: {
+                    reputation: { increment: reputationIncrease }
+                }
+            });
+            return;
+        }
+        if (reputationDecrease > 0) {
+            yield db_1.client.user.update({
+                where: { id: user_id },
+                data: {
+                    reputation: { decrement: reputationDecrease }
+                }
+            });
+            return;
+        }
+    } // anything below 3 submissions must not be given any points
+    else {
+        return;
+    }
+}));
