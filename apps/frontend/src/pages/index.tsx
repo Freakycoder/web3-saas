@@ -6,7 +6,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import axios from 'axios';
 import { useWallet } from '@solana/wallet-adapter-react';
 
-const HomePage = () => {
+const LandingPage = () => {
   const router = useRouter();
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -237,7 +237,7 @@ const HomePage = () => {
           </button>
           <button
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition"
-            onClick={() => router.push('/get-started')}
+            onClick={() => router.push('/home')}
           >
             Get Started <ArrowRight size={18} />
           </button>
@@ -650,4 +650,4 @@ const HomePage = () => {
   );
 }
 
-export default HomePage;
+export default LandingPage;
