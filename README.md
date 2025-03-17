@@ -1,84 +1,47 @@
-# Turborepo starter
+This Web3-based platform enables users to post tasks and complete tasks in exchange for blockchain-based payments. The primary use case focuses on YouTube thumbnail selection tasks, where users upload multiple variants of a thumbnail, and workers vote on the best-performing option to optimize Click-Through Rates (CTR).
 
-This Turborepo starter is maintained by the Turborepo core team.
+The platform is completely decentralized and uses Solana blockchain for payments and authentication. Users sign in via their wallets, eliminating the need for Web2-based authentication.
 
-## Using this example
+Key Features
+🔗 Wallet-Based Authentication
+Users connect their Solana wallet to sign in.
+No traditional email/password login—Web3-only authentication.
+Secure authentication using signMessage().
 
-Run the following command:
+📝 Task Creation & Bidding
 
-```sh
-npx create-turbo@latest
-```
+Users post tasks, specifying a reward in SOL.
+Task includes multiple thumbnail options.
+Workers select the best thumbnail based on their judgment.
 
-## What's inside?
+💰 Decentralized Payments
 
-This Turborepo includes the following packages/apps:
+Payments are locked in a smart contract when the task is created.
+Workers receive payments once they submit their selections.
+No middleman, instant transactions.
 
-### Apps and Packages
+⭐ Reputation & Staking System
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+Workers gain reputation points for quality submissions.
+Staking mechanism prevents spam and ensures high-quality participation.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+🛠️ Confidence Filtering & Weighted Voting
 
-### Utilities
+Reputation-based weighted voting system.
+Eliminates users who blindly click to earn rewards.
+Uses confidence filtering to remove low-effort submissions.
 
-This Turborepo has some additional tools already setup for you:
+Tech Stack:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+Frontend-
+Next.js + TypeScript (Performance & Scalability)
+Tailwind CSS (Modern UI Styling)
+Recoil (State Management)
+Solana Wallet Adapter (Wallet Connection & Authentication)
 
-### Build
+Backend-
 
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm build
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+Node.js & Express.js (API Development)
+Prisma + PostgreSQL (Database Management)
+Anchor Framework (Solana Smart Contracts)
+NaCl Signature Verification (Wallet Authentication Security)
