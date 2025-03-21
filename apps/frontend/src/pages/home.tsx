@@ -152,7 +152,8 @@ const HomePage = () => {
                 </p>
                 <motion.button
                   className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition "
-                  whileHover={{ scale: 1.05 }}>
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => setIsModalOpen(true)}>
                   Create Task <ArrowRight size={18} />
                 </motion.button>
               </div>
