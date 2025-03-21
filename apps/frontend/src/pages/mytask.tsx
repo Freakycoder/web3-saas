@@ -4,6 +4,7 @@ import { Youtube, Search, Filter, ArrowUpDown, Clock, DollarSign, ThumbsUp, Plus
 import { useRouter } from 'next/router';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { Navbar } from '@/components/Navbar';
 
 const CreatedTasksPage = () => {
   const router = useRouter();
@@ -219,25 +220,7 @@ const CreatedTasksPage = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="w-full bg-[#0f0f0f] border-b border-gray-800 py-4 px-8 flex justify-between items-center relative z-10">
-        <div className="flex items-center gap-2">
-          <Youtube className="text-red-600" size={24} />
-          <span className="text-xl font-bold">ThumbBoost</span>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <a href="#" className="text-gray-300 hover:text-white">Dashboard</a>
-          <a href="#" className="text-gray-300 hover:text-white">Marketplace</a>
-          <a href="#" className="text-white border-b-2 border-red-600">My Tasks</a>
-          {isClient && (
-            <WalletMultiButton className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition">
-              <div className="flex gap-2 items-center">
-                <span>Wallet</span>
-              </div>
-            </WalletMultiButton>
-          )}
-        </div>
-      </nav>
+      <Navbar/>
 
       {/* Main Content */}
       <motion.div
