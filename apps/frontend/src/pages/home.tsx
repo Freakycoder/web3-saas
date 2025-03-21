@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { animate, motion } from 'framer-motion';
 import { Youtube, ArrowRight, Plus, Search, TrendingUp, Star, DollarSign, Clock } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWallet } from '@solana/wallet-adapter-react';
+import Modal from '@/components/Modal';
+import MultiStepForm from '@/components/MultiStepForm';
+import { Navbar } from '@/components/Navbar';
 
 const HomePage = () => {
   const router = useRouter();
   const { connected, publicKey } = useWallet();
   const [isClient, setIsClient] = useState(false);
-  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Animation for background
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
@@ -22,7 +26,7 @@ const HomePage = () => {
       votes: 124,
       reward: 25,
       timeLeft: "2 days",
-      image: "/api/placeholder/400/225"
+      image: "https://i.ytimg.com/vi/Nii_fBGb0_c/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLDU-hiECHiIdVG13fPWK_n01KLbSg"
     },
     {
       id: 2,
@@ -31,7 +35,7 @@ const HomePage = () => {
       votes: 87,
       reward: 30,
       timeLeft: "1 day",
-      image: "/api/placeholder/400/225"
+      image: "https://img.freepik.com/premium-psd/creative-youtube-thumbnail-design-template_1278073-1870.jpg?semt=ais_hybrid"
     },
     {
       id: 3,
@@ -40,12 +44,12 @@ const HomePage = () => {
       votes: 156,
       reward: 20,
       timeLeft: "3 days",
-      image: "/api/placeholder/400/225"
+      image: "https://img.freepik.com/free-psd/creative-youtube-thumbnail-design-template_505751-6437.jpg"
     }
   ];
 
   useEffect(() => {
-    const handleMouseMove = (e : any) => {
+    const handleMouseMove = (e: any) => {
       setMousePosition({
         x: e.clientX,
         y: e.clientY
@@ -81,7 +85,7 @@ const HomePage = () => {
     visible: { y: 0, opacity: 1, transition: { duration: 0.5 } }
   };
 
-  return (
+  return <>
     <div className="bg-[#0f0f0f] min-h-screen text-white">
       {/* Interactive Background Animation */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -112,25 +116,7 @@ const HomePage = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="w-full bg-[#0f0f0f] border-b border-gray-800 py-4 px-8 flex justify-between items-center relative z-10">
-        <div className="flex items-center gap-2">
-          <Youtube className="text-red-600" size={24} />
-          <span className="text-xl font-bold">ThumbBoost</span>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <a href="#" className="text-gray-300 hover:text-white">Dashboard</a>
-          <a href="#marketplace" className="text-gray-300 hover:text-white">Marketplace</a>
-          <a href="#" className="text-gray-300 hover:text-white">Profile</a>
-          {isClient && (
-            <WalletMultiButton className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition">
-              <div className='flex gap-2 items-center'>
-                <span>Wallet</span>
-              </div>
-            </WalletMultiButton>
-          )}
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Main Content */}
       <motion.div
@@ -151,10 +137,10 @@ const HomePage = () => {
           {/* Option Cards */}
           <motion.div variants={staggerChildren} className="grid md:grid-cols-2 gap-8 mb-16">
             {/* Create New Task Card */}
-            <motion.div 
-              variants={slideUp} 
+            <motion.div
+              variants={slideUp}
               className="bg-[#181818] rounded-xl border border-gray-800 hover:border-red-600 transition overflow-hidden cursor-pointer"
-              onClick={() => router.push('/create-task')}
+              onClick={() => setIsModalOpen(true)}
             >
               <div className="p-8">
                 <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-600/20 mb-6">
@@ -164,16 +150,18 @@ const HomePage = () => {
                 <p className="text-gray-400 mb-6">
                   Upload your thumbnails and let our community vote on the best option to improve your CTR and viewer engagement.
                 </p>
-                <button className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition">
+                <motion.button
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition "
+                  whileHover={{ scale: 1.05 }}>
                   Create Task <ArrowRight size={18} />
-                </button>
+                </motion.button>
               </div>
               <div className="h-2 bg-gradient-to-r from-red-600 to-red-400"></div>
             </motion.div>
 
             {/* Explore Marketplace Card */}
-            <motion.div 
-              variants={slideUp} 
+            <motion.div
+              variants={slideUp}
               className="bg-[#181818] rounded-xl border border-gray-800 hover:border-blue-600 transition overflow-hidden cursor-pointer"
               onClick={() => router.push('/marketplace')}
             >
@@ -185,17 +173,19 @@ const HomePage = () => {
                 <p className="text-gray-400 mb-6">
                   Browse and vote on other creators' thumbnail options to earn rewards and help the community grow together.
                 </p>
-                <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition">
+                <motion.button
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition"
+                  whileHover={{ scale: 1.05 }}>
                   View Marketplace <ArrowRight size={18} />
-                </button>
+                </motion.button>
               </div>
               <div className="h-2 bg-gradient-to-r from-blue-600 to-blue-400"></div>
             </motion.div>
           </motion.div>
 
           {/* Featured Tasks Section */}
-          <motion.section 
-            id="marketplace" 
+          <motion.section
+            id="marketplace"
             className="mt-24"
             initial="hidden"
             whileInView="visible"
@@ -210,14 +200,16 @@ const HomePage = () => {
                 </div>
                 <h2 className="text-3xl font-bold">Trending in the Marketplace</h2>
               </div>
-              <button className="text-gray-400 hover:text-white transition flex items-center gap-2">
+              <button
+                className="text-gray-400 hover:text-white transition flex items-center gap-2"
+                onClick={() => router.push('/marketplace')}>
                 View All <ArrowRight size={16} />
               </button>
             </motion.div>
 
             <motion.div variants={fadeIn} className="grid md:grid-cols-3 gap-6">
               {featuredTasks.map((task) => (
-                <motion.div 
+                <motion.div
                   key={task.id}
                   variants={slideUp}
                   className="bg-[#1a1a1a] rounded-lg overflow-hidden border border-gray-800 hover:border-gray-700 transition cursor-pointer"
@@ -231,7 +223,7 @@ const HomePage = () => {
                   <div className="p-4">
                     <h3 className="font-medium text-lg mb-2">{task.title}</h3>
                     <p className="text-gray-400 text-sm mb-4">By {task.creator}</p>
-                    
+
                     <div className="flex justify-between text-sm">
                       <div className="flex items-center text-gray-300">
                         <Star size={14} className="mr-1 text-yellow-500" /> {task.votes} votes
@@ -274,21 +266,24 @@ const HomePage = () => {
             <Youtube className="text-red-600" size={20} />
             <span className="text-lg font-bold">ThumbBoost</span>
           </div>
-          
+
           <div className="flex gap-8">
             <a href="#" className="text-gray-400 hover:text-white text-sm transition">Help Center</a>
             <a href="#" className="text-gray-400 hover:text-white text-sm transition">Privacy</a>
             <a href="#" className="text-gray-400 hover:text-white text-sm transition">Terms</a>
             <a href="#" className="text-gray-400 hover:text-white text-sm transition">Contact</a>
           </div>
-          
+
           <div className="text-gray-500 text-xs mt-4 md:mt-0">
             © 2025 ThumbBoost. All rights reserved.
           </div>
         </div>
       </footer>
     </div>
-  );
+    <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MultiStepForm />
+    </Modal>
+  </>
 }
 
 export default HomePage;

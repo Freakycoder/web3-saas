@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from 'axios'
+import axios from 'axios';
 import { StepOne } from "./StepOne";
 import { StepTwo } from "./StepTwo";
-import { StepThree } from "./StepThree";
+import { StepThreeA, StepThreeB } from "./StepThree";
+import { StepFour } from "./StepFour";
 
 interface FormData {
     title: string;
     description: string;
-    amount: number; 
+    amount: number;
     // add completionTime field also, just need the days in number.
     transactionSignature: string;
+    audienceSize: number;
 }
 
 export interface Form {
@@ -18,7 +20,7 @@ export interface Form {
     setFormData: (formData: FormData) => void;
     nextStep?: () => void;
     prevStep?: () => void;
-    verifyTransaction?: () => void
+    verifyTransaction?: () => void;
 }
 
 interface ImageURL {
@@ -37,14 +39,99 @@ export interface StepTwoProps extends Image {
     removeImage: (index: number) => void;
 }
 
-export const MultiStepForm = () => {
+// Enhanced Step indicator component
+const StepIndicator = ({ currentStep }: { currentStep: number }) => {
+    const steps = [
+        { number: 1, title: "Details" },
+        { number: 2, title: "Upload" },
+        { number: 3, title: "Audience" },
+        { number: 4, title: "Preview" },
+        { number: 5, title: "Payment" }
+    ];
 
+    return (
+        <div className="w-full mb-2">
+            <div className="flex items-center justify-between mx-auto max-w-3xl px-28">
+                {steps.map((step, index) => (
+                    <div key={step.number} className="flex flex-col items-center relative">
+                        {/* Connecting line - improved positioning */}
+                        {index < steps.length - 1 && (
+                            <div className="absolute top-4 left-1/2 h-1 bg-gray-700 w-16" style={{ transform: 'translateX(50%)' }}>
+                                <motion.div 
+                                    className="h-full bg-red-600"
+                                    initial={{ width: currentStep > step.number ? "100%" : "0%" }}
+                                    animate={{ width: currentStep > step.number ? "100%" : "0%" }}
+                                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                                ></motion.div>
+                            </div>
+                        )}
+                        
+                        {/* Step circle with smooth animation */}
+                        <motion.div 
+                            className={`z-10 flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                                currentStep >= step.number 
+                                    ? 'bg-red-600 border-red-400' 
+                                    : 'bg-gray-700 border-gray-600'
+                            }`}
+                            initial={false}
+                            animate={{ 
+                                scale: currentStep === step.number ? 1.1 : 1,
+                                borderColor: currentStep >= step.number ? '#f87171' : '#4b5563'
+                            }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {currentStep > step.number ? (
+                                <motion.svg 
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    className="h-4 w-4 text-white" 
+                                    fill="none" 
+                                    viewBox="0 0 24 24" 
+                                    stroke="currentColor"
+                                    initial={{ opacity: 0, pathLength: 0 }}
+                                    animate={{ opacity: 1, pathLength: 1 }}
+                                    transition={{ duration: 0.3, delay: 0.1 }}
+                                >
+                                    <motion.path 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        strokeWidth={2} 
+                                        d="M5 13l4 4L19 7"
+                                        initial={{ pathLength: 0 }}
+                                        animate={{ pathLength: 1 }}
+                                        transition={{ duration: 0.3, delay: 0.1 }}
+                                    />
+                                </motion.svg>
+                            ) : (
+                                <span className="text-xs text-white font-bold">{step.number}</span>
+                            )}
+                        </motion.div>
+                        
+                        {/* Step title with animation */}
+                        <motion.span 
+                            className="mt-2 text-xs"
+                            animate={{ 
+                                color: currentStep === step.number ? '#ef4444' : '#9ca3af',
+                                fontWeight: currentStep === step.number ? 'bold' : 'normal'
+                            }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {step.title}
+                        </motion.span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export const MultiStepForm = () => {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState<FormData>({
         title: "",
         description: "",
         amount: 0,
-        transactionSignature: ""
+        transactionSignature: "",
+        audienceSize: 0
     });
     const [imageURL, setImageURL] = useState<ImageURL[]>([]);
     const [s3Images, setS3Images] = useState<File[]>([]);
@@ -144,13 +231,14 @@ export const MultiStepForm = () => {
         })
     }
 
+    // Enhanced step transition animations
     const stepVariants = {
         hidden: { opacity: 0, x: -20 },
         visible: {
             opacity: 1,
             x: 0,
             transition: {
-                duration: 0.3,
+                duration: 0.4,
                 ease: "easeOut"
             }
         },
@@ -158,119 +246,90 @@ export const MultiStepForm = () => {
             opacity: 0,
             x: 20,
             transition: {
-                duration: 0.2,
-                ease: "easeIn"
-            }
-        }
-    };
-
-    // Animation variant for preview content
-    const previewVariants = {
-        hidden: { opacity: 0, scale: 0.95 },
-        visible: {
-            opacity: 1,
-            scale: 1,
-            transition: {
-                delay: 0.1,
                 duration: 0.3,
-                ease: "easeOut"
+                ease: "easeInOut"
             }
         }
     };
 
     return (
-        <div className="w-full flex flex-row">
-            {/* Left: Multi-Step Form (2/3 width) */}
-            <div className="w-2/3 p-8 border-r border-gray-200">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={step}
-                        variants={stepVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        className="h-full"
-                    >
-                        {step === 1 && <StepOne formData={formData} setFormData={setFormData} nextStep={nextStep} />}
-                        {step === 2 && <StepTwo
-                            imageURL={imageURL}
-                            setImageURL={setImageURL}
-                            nextStep={nextStep}
-                            prevStep={prevStep}
-                            handleImageUpload={handleImageUpload}
-                            removeImage={removeImage}
-                        />}
-                        {step === 3 && <StepThree formData={formData} setFormData={setFormData} prevStep={prevStep} verifyTransaction={verifyTransaction} />}
-                    </motion.div>
-                </AnimatePresence>
+        <div className="w-full flex flex-col">
+            <div className="w-full sticky top-0 z-10 p-8  bg-[#181818]/80 border border-gray-700/50 shadow-2xl">
+                <StepIndicator currentStep={step} />
             </div>
-
-            {/* Right: Live Preview (1/3 width) */}
-            <motion.div
-                className="w-1/3 bg-gray-50 p-8 flex flex-col"
-                variants={previewVariants}
-                initial="hidden"
-                animate="visible"
-            >
-                <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col items-center">
-                    <h2 className="text-xl font-semibold text-gray-800">{formData.title || "Task Title Preview"}</h2>
-                    <p className="text-gray-600 mt-3 text-center">{formData.description || "Task description will appear here..."}</p>
-
-                    {/* Image Preview with animation - Now displays multiple images in a grid */}
-                    <AnimatePresence>
-                        {imageURL.length > 0 ? (
-                            <motion.div
-                                key="preview-grid"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="mt-4 w-full grid grid-cols-2 gap-2"
-                            >
-                                {imageURL.map((img, index) => (
-                                    <motion.div
-                                        key={`preview-${index}`}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                                        className="relative aspect-square"
-                                    >
-                                        <img
-                                            src={img.image_url}
-                                            alt={`Preview ${index + 1}`}
-                                            className="w-full h-full object-cover rounded-lg"
-                                        />
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="no-image"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="mt-4 w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500"
-                            >
-                                No images selected
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                {/* Step indicator */}
-                <div className="mt-auto pt-4 flex justify-between items-center">
-                    <div className="flex space-x-2">
-                        {[1, 2, 3].map((i) => (
-                            <div
-                                key={i}
-                                className={`h-2.5 w-2.5 rounded-full ${step >= i ? "bg-blue-500" : "bg-gray-300"
-                                    }`}
-                            />
-                        ))}
+            
+            <div className="w-full flex flex-row">
+                {/* Main content area */}
+                <div className="w-full p-8">
+                    {/* This is the primary container that holds the steps with a fixed height */}
+                    <div className="h-[500px] relative">
+                        {/* This is the scrollable container where the step components are rendered */}
+                        <div className="absolute inset-0 ">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={step}
+                                    variants={stepVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
+                                >
+                                    {step === 1 && <StepOne formData={formData} setFormData={setFormData} nextStep={nextStep} />}
+                                    {step === 2 && <StepTwo
+                                        imageURL={imageURL}
+                                        setImageURL={setImageURL}
+                                        nextStep={nextStep}
+                                        prevStep={prevStep}
+                                        handleImageUpload={handleImageUpload}
+                                        removeImage={removeImage}
+                                    />}
+                                    {step === 3 && <StepThreeA formData={formData} setFormData={setFormData} prevStep={prevStep} nextStep={nextStep} />}
+                                    {step === 4 && <StepFour formData={formData} setFormData={setFormData} prevStep={prevStep} nextStep={nextStep} imageURL={imageURL} />}
+                                    {step === 5 && <StepThreeB formData={formData} setFormData={setFormData} prevStep={prevStep} nextStep={nextStep} />}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
                     </div>
-                    <span className="text-sm text-gray-500">Step {step} of 3</span>
                 </div>
-            </motion.div>
+            </div>
+            
+            {/* Scrollbar styling - simplified and made more prominent */}
+            <style jsx global>{`
+                /* Base scrollbar styling */
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 12px; /* Increased width for better visibility */
+                    display: block;
+                }
+                
+                /* Track styling */
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: #2a2a2a;
+                    border-radius: 6px;
+                    margin: 4px;
+                }
+                
+                /* Thumb styling */
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #ef4444;
+                    border-radius: 6px;
+                    border: 2px solid #2a2a2a;
+                }
+                
+                /* Hover state */
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #f87171;
+                }
+                
+                /* Firefox compatibility */
+                .custom-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: #ef4444 #2a2a2a;
+                }
+                
+                /* Ensure the scrollbar is always visible */
+                .custom-scrollbar {
+                    overflow-y: scroll !important;
+                }
+            `}</style>
         </div>
     );
 };

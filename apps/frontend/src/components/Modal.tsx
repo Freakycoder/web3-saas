@@ -31,7 +31,7 @@ export const Modal = ({ isOpen, onClose, children }: ModalProps) => {
       }
     }
   };
-
+  
   // Animation variants for the content inside the modal
   const contentVariants = {
     hidden: { opacity: 0, y: 10 },
@@ -58,28 +58,35 @@ export const Modal = ({ isOpen, onClose, children }: ModalProps) => {
     <AnimatePresence mode="wait">
       {isOpen && (
         <>
-          {/* Backdrop overlay with smooth fade */}
+          {/* Enhanced backdrop overlay with increased blur for depth */}
           <motion.div
-            className="fixed inset-0 bg-black z-40"
+            className="fixed inset-0 h-2xl bg-black/75 backdrop-blur-md z-40"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             onClick={onClose} // Close modal when clicking outside
           />
-
-          {/* Modal container with spring-based animation */}
-          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          
+          {/* Modal container with glass-like effect */}
+          <div className="fixed inset-0 h-2xl flex items-center justify-center z-50 pointer-events-none px-4">
             <motion.div
-              className="w-full max-w-5xl bg-white shadow-xl rounded-lg overflow-hidden pointer-events-auto"
+              className="w-[1000px] max-h-[95vh] bg-[#181818]/80 border border-gray-700/50 shadow-2xl rounded-lg overflow-hidden pointer-events-auto text-white backdrop-blur-sm flex flex-col"
               variants={modalVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
+              style={{
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                backdropFilter: "blur(8px)",
+              }}
             >
-              {/* Close button */}
+              {/* Content background with subtle gradient overlay for depth */}
+              <div className="absolute inset-0 bg-gradient-to-b from-gray-900/20 to-black/30 pointer-events-none" />
+              
+              {/* Close button with enhanced visibility */}
               <motion.button
-                className="absolute right-4 top-4 p-2 text-gray-500 rounded-full hover:bg-gray-100 transition"
+                className="absolute right-4 top-4 p-2 text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition z-10"
                 onClick={onClose}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -87,16 +94,15 @@ export const Modal = ({ isOpen, onClose, children }: ModalProps) => {
               >
                 <X size={20} />
               </motion.button>
-
+              
               {/* Content wrapper with separate animation */}
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={isOpen ? 'open' : 'closed'}
                   variants={contentVariants}
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  className="w-full" // Take up full width of the modal
+                  className="w-full h-full mb-4 relative z-0 overflow-y-auto max-h-[calc(95vh-16px)] custom-scrollbar "
                 >
                   {children}
                 </motion.div>

@@ -5,10 +5,10 @@ import { Form } from "./MultiStepForm";
 
 export const StepOne = ({ formData, setFormData, nextStep }: Form) => {
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col ">
             <h1 className="text-2xl font-bold text-white mb-6">Enter Thumbnail Details</h1>
 
-            <Card className="flex-1 bg-[#222222] border border-gray-800 shadow-md rounded-xl p-8 flex flex-col gap-6">
+            <Card className="flex-1 bg-[#222222] border border-gray-800 shadow-md rounded-xl px-8 pt-8 pb-4 flex flex-col gap-6 ">
                 <div className="flex flex-col gap-2">
                     <CardTitle className="text-lg font-semibold text-gray-200">Enter Video Title</CardTitle>
                     <Input
