@@ -4,53 +4,57 @@ import { Youtube, Search, Filter, ArrowUpDown, Clock, DollarSign, Star, ThumbsUp
 import { useRouter } from 'next/router';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { Navbar } from '@/components/Navbar';
+import Modal from '@/components/Modal';
+import {TaskInstructionsContent} from '@/components/TaskInstructions';
 
 const MarketplacePage = () => {
   const router = useRouter();
-  const { connected, publicKey } = useWallet();
   const [isClient, setIsClient] = useState(false);
-  
+
   // Filter and sort states
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [sortOption, setSortOption] = useState('recent');
   const [showFilters, setShowFilters] = useState(false);
-  
+  const [isOpen, setisOpen] = useState(false);
+  const [taskId , setTaskId] = useState<string>('');
+
   // Animation for background
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   // Mock marketplace tasks data
   const [tasks, setTasks] = useState([
     {
-      id: 1,
+      id: "1",
       title: "Gaming Channel Thumbnail Review",
       creator: "GamerPro",
       creatorAvatar: "/api/placeholder/32/32",
       votes: 124,
       reward: 25,
       timeLeft: "2 days",
-      image: "/api/placeholder/400/225",
+      image: "https://i.ytimg.com/vi/Nii_fBGb0_c/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLDU-hiECHiIdVG13fPWK_n01KLbSg",
       category: "Gaming",
       liked: false,
       totalOptions: 3,
       description: "Help me choose the best thumbnail for my upcoming Minecraft speedrun video. Looking for high CTR options."
     },
     {
-      id: 2,
+      id: "2",
       title: "Tech Review Thumbnail Options",
       creator: "TechGenius",
       creatorAvatar: "/api/placeholder/32/32",
       votes: 87,
       reward: 30,
       timeLeft: "1 day",
-      image: "/api/placeholder/400/225",
+      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRgszHwLkaj9nla5y7yENJf1sPkyjw9B1fVVQ&s",
       category: "Technology",
       liked: true,
       totalOptions: 4,
       description: "I've created multiple options for my iPhone 17 review. Need your votes on which will get the most clicks."
     },
     {
-      id: 3,
+      id: "3",
       title: "Food Blog Thumbnail Selection",
       creator: "CookingMaster",
       creatorAvatar: "/api/placeholder/32/32",
@@ -64,7 +68,7 @@ const MarketplacePage = () => {
       description: "Which thumbnail will make viewers hungry? Choosing between two styles for my pasta recipe video."
     },
     {
-      id: 4,
+      id: "4",
       title: "Travel Vlog Cover Image",
       creator: "Wanderlust",
       creatorAvatar: "/api/placeholder/32/32",
@@ -78,7 +82,7 @@ const MarketplacePage = () => {
       description: "Five thumbnail options for my Japan travel vlog. Looking for the one that best captures the essence of Tokyo."
     },
     {
-      id: 5,
+      id: "5",
       title: "Fitness Channel New Series",
       creator: "FitnessPro",
       creatorAvatar: "/api/placeholder/32/32",
@@ -92,7 +96,7 @@ const MarketplacePage = () => {
       description: "Launching a new workout series. Need to select the thumbnail that will attract the right audience."
     },
     {
-      id: 6,
+      id: "6",
       title: "Educational Content Thumbnail",
       creator: "BrainBoost",
       creatorAvatar: "/api/placeholder/32/32",
@@ -106,7 +110,7 @@ const MarketplacePage = () => {
       description: "Help me choose between two approaches for my physics explainer video - text-heavy or visual-focused."
     },
     {
-      id: 7,
+      id: "7",
       title: "Music Video Cover Selection",
       creator: "MelodyMaker",
       creatorAvatar: "/api/placeholder/32/32",
@@ -120,7 +124,7 @@ const MarketplacePage = () => {
       description: "Four different aesthetic options for my new music video. Which one stands out the most?"
     },
     {
-      id: 8,
+      id: '8',
       title: "Beauty Tutorial Thumbnail",
       creator: "GlamGuide",
       creatorAvatar: "/api/placeholder/32/32",
@@ -134,7 +138,7 @@ const MarketplacePage = () => {
       description: "Three thumbnail options for my skincare routine video. Which one would you click on?"
     },
     {
-      id: 9,
+      id: "9",
       title: "Comedy Sketch Thumbnail",
       creator: "LaughFactory",
       creatorAvatar: "/api/placeholder/32/32",
@@ -172,14 +176,14 @@ const MarketplacePage = () => {
   ];
 
   // Toggle like
-  const toggleLike = (taskId : any) => {
-    setTasks(tasks.map(task => 
+  const toggleLike = (taskId: any) => {
+    setTasks(tasks.map(task =>
       task.id === taskId ? { ...task, liked: !task.liked } : task
     ));
   };
 
   useEffect(() => {
-    const handleMouseMove = (e : any) => {
+    const handleMouseMove = (e: any) => {
       setMousePosition({
         x: e.clientX,
         y: e.clientY
@@ -194,43 +198,15 @@ const MarketplacePage = () => {
     };
   }, []);
 
-  // Handle sorting
-  useEffect(() => {
-    let sortedTasks = [...tasks];
-    
-    switch (sortOption) {
-      case 'reward':
-        sortedTasks.sort((a, b) => b.reward - a.reward);
-        break;
-      case 'votes':
-        sortedTasks.sort((a, b) => b.votes - a.votes);
-        break;
-      case 'timeLeft':
-        // This is simplified - in a real app you'd use actual timestamps
-        sortedTasks.sort((a, b) => {
-          const aHours = a.timeLeft.includes('hours') ? parseInt(a.timeLeft) : parseInt(a.timeLeft) * 24;
-          const bHours = b.timeLeft.includes('hours') ? parseInt(b.timeLeft) : parseInt(b.timeLeft) * 24;
-          return aHours - bHours;
-        });
-        break;
-      case 'recent':
-      default:
-        // Assume id represents recency in this mock data
-        sortedTasks.sort((a, b) => b.id - a.id);
-        break;
-    }
-    
-    setTasks(sortedTasks);
-  }, [sortOption]);
 
   // Filter tasks based on search and category
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         task.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         task.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesCategory = activeCategory === 'All' || task.category === activeCategory;
-    
+
     return matchesSearch && matchesCategory;
   });
 
@@ -256,7 +232,7 @@ const MarketplacePage = () => {
     visible: { y: 0, opacity: 1, transition: { duration: 0.5 } }
   };
 
-  return (
+  return <>
     <div className="bg-[#0f0f0f] min-h-screen text-white">
       {/* Interactive Background Animation */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -287,25 +263,7 @@ const MarketplacePage = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="w-full bg-[#0f0f0f] border-b border-gray-800 py-4 px-8 flex justify-between items-center relative z-10">
-        <div className="flex items-center gap-2">
-          <Youtube className="text-red-600" size={24} />
-          <span className="text-xl font-bold">ThumbBoost</span>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <a href="#" className="text-gray-300 hover:text-white">Dashboard</a>
-          <a href="#" className="text-gray-300 hover:text-white">Marketplace</a>
-          <a href="#" className="text-gray-300 hover:text-white">Profile</a>
-          {isClient && (
-            <WalletMultiButton className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition">
-              <div className='flex gap-2 items-center'>
-                <span>Wallet</span>
-              </div>
-            </WalletMultiButton>
-          )}
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Main Content */}
       <motion.div
@@ -318,7 +276,7 @@ const MarketplacePage = () => {
           {/* Page Header */}
           <motion.div variants={slideUp} className="mb-8">
             <div className="flex items-center gap-4 mb-4">
-              <button 
+              <button
                 onClick={() => router.push('/home')}
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition"
               >
@@ -332,8 +290,8 @@ const MarketplacePage = () => {
           </motion.div>
 
           {/* Stats Banner */}
-          <motion.div 
-            variants={slideUp} 
+          <motion.div
+            variants={slideUp}
             className="grid grid-cols-3 md:grid-cols-4 gap-4 mb-12 bg-[#181818] p-6 rounded-lg border border-gray-800"
           >
             <div className="text-center">
@@ -380,7 +338,7 @@ const MarketplacePage = () => {
                 />
               </div>
               <div className="flex gap-2">
-                <button 
+                <button
                   className="flex items-center gap-2 bg-[#222222] hover:bg-[#2a2a2a] text-white px-4 py-3 rounded-lg transition"
                   onClick={() => setShowFilters(!showFilters)}
                 >
@@ -405,7 +363,7 @@ const MarketplacePage = () => {
 
             {/* Expandable filters */}
             {showFilters && (
-              <motion.div 
+              <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
@@ -417,11 +375,10 @@ const MarketplacePage = () => {
                     <button
                       key={category}
                       onClick={() => setActiveCategory(category)}
-                      className={`px-4 py-2 rounded-full text-sm ${
-                        activeCategory === category
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-[#222222] text-gray-300 hover:bg-[#2a2a2a]'
-                      } transition`}
+                      className={`px-4 py-2 rounded-full text-sm ${activeCategory === category
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-[#222222] text-gray-300 hover:bg-[#2a2a2a]'
+                        } transition`}
                     >
                       {category}
                     </button>
@@ -433,16 +390,18 @@ const MarketplacePage = () => {
 
           {/* Marketplace Grid */}
           {filteredTasks.length > 0 ? (
-            <motion.div 
-              variants={staggerChildren} 
+            <motion.div
+              variants={staggerChildren}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
               {filteredTasks.map((task) => (
-                <motion.div 
+                <motion.div
                   key={task.id}
                   variants={slideUp}
                   className="bg-[#1a1a1a] rounded-lg overflow-hidden border border-gray-800 hover:border-gray-700 transition cursor-pointer group"
-                  onClick={() => router.push(`/task/${task.id}`)}
+                  onClick={() => {
+                    setisOpen(true)
+                  setTaskId(task.id)}}
                 >
                   <div className="relative">
                     <img src={task.image} alt={task.title} className="w-full aspect-video object-cover group-hover:opacity-90 transition" />
@@ -456,17 +415,17 @@ const MarketplacePage = () => {
                       <img src="/api/placeholder/16/16" className="w-4 h-4 rounded-full mr-1" /> {task.totalOptions} options
                     </div>
                   </div>
-                  
+
                   <div className="p-4">
                     <h3 className="font-medium text-lg mb-2 line-clamp-1">{task.title}</h3>
                     <p className="text-gray-400 text-sm mb-4 line-clamp-2">{task.description}</p>
-                    
+
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center">
                         <img src={task.creatorAvatar} alt={task.creator} className="w-6 h-6 rounded-full mr-2" />
                         <span className="text-sm text-gray-300">{task.creator}</span>
                       </div>
-                      <button 
+                      <button
                         className={`p-1.5 rounded-full ${task.liked ? 'text-red-500 bg-red-500/10' : 'text-gray-400 bg-[#222222] hover:text-red-500'}`}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -476,7 +435,7 @@ const MarketplacePage = () => {
                         <Heart size={16} fill={task.liked ? "currentColor" : "none"} />
                       </button>
                     </div>
-                    
+
                     <div className="flex justify-between text-sm">
                       <div className="flex items-center text-gray-300">
                         <ThumbsUp size={14} className="mr-1 text-blue-500" /> {task.votes} votes
@@ -492,7 +451,7 @@ const MarketplacePage = () => {
           ) : (
             <motion.div variants={slideUp} className="text-center py-16">
               <div className="text-gray-400 mb-4">No tasks found matching your criteria</div>
-              <button 
+              <button
                 onClick={() => {
                   setSearchQuery('');
                   setActiveCategory('All');
@@ -534,21 +493,24 @@ const MarketplacePage = () => {
             <Youtube className="text-red-600" size={20} />
             <span className="text-lg font-bold">ThumbBoost</span>
           </div>
-          
+
           <div className="flex gap-8">
             <a href="#" className="text-gray-400 hover:text-white text-sm transition">Help Center</a>
             <a href="#" className="text-gray-400 hover:text-white text-sm transition">Privacy</a>
             <a href="#" className="text-gray-400 hover:text-white text-sm transition">Terms</a>
             <a href="#" className="text-gray-400 hover:text-white text-sm transition">Contact</a>
           </div>
-          
+
           <div className="text-gray-500 text-xs mt-4 md:mt-0">
             © 2025 ThumbBoost. All rights reserved.
           </div>
         </div>
       </footer>
     </div>
-  );
+    {isOpen && <Modal isOpen={isOpen} onClose={() => setisOpen(false)} >
+      <TaskInstructionsContent taskId = {taskId} />
+    </Modal>}
+  </>
 }
 
 export default MarketplacePage;
