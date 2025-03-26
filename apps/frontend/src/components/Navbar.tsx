@@ -1,29 +1,77 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-import { Scale, Wallet, Youtube } from 'lucide-react'
+import { Camera, CheckCircle, CircleDollarSign, Scale, Star, User, Wallet, XCircle, Youtube, Lock } from 'lucide-react'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useRouter } from 'next/router'
 import axios from 'axios'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { UserModal } from './UserModal'
-import { motion } from "motion/react"
+import { UnifiedWalletButton } from '@jup-ag/wallet-adapter'
+import { motion } from 'framer-motion'
 
 
-const user = { name: "Alex Johnson", email: "alex@example.com", username: "alexcreator" }
+interface UserData {
+    id: string;
+    username: string;
+    name: string; // This maps to display_name in your DB
+    walletAddress: string;
+    reputation: number;
+    task_completed: number;
+    task_failed: number;
+    pending_amount: number;
+    locked_amount: number;
+    avatarUrl?: string;
+    avatarFile?: File;
+}
 
 export const Navbar = () => {
     const router = useRouter();
-    const [userData, setUserData] = useState(user);
+    // const [userData, setUserData] = useState(user);
     const [isclient, setIsClient] = useState(false);
     const { connected, signMessage, publicKey } = useWallet();
     const [isHoveredHome, setIsHoveredHome] = useState(false);
     const [isHoveredMarketplace, setIsHoveredMarketplace] = useState(false);
     const [isHoveredProfile, setIsHoveredProfile] = useState(false);
     const [isOpen, setisOpen] = useState(false);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
+    const solanaLogo = "https://assets.coingecko.com/coins/images/4128/large/solana.png";
+
+    // Make sure your userData state includes these properties
+    const [userData, setUserData] = useState<UserData>({
+        id: "", // Would be populated from your auth system
+        username: "user123",
+        name: "User Name", // This is display_name in your DB
+        walletAddress: "0x123...abc",
+        reputation: 100,
+        task_completed: 12,
+        task_failed: 3,
+        pending_amount: 0.025,
+        locked_amount: 0.158
+    });
 
     const [token, setToken] = useState<string>('');
+    const totalTasks = userData.task_completed + userData.task_failed;
+    const completionRate = totalTasks > 0
+        ? Math.round((userData.task_completed / totalTasks) * 100)
+        : 0;
+
+
+
+    // Handle saving changes
+    const saveChanges = async (): Promise<void> => {
+        try {
+            // Here you would call your API to update the user data
+            console.log("Saving user data:", userData);
+            // Example API call:
+            // await updateUserProfile(userData);
+
+            // You might want to show a success message here
+        } catch (error) {
+            console.error("Error saving user data:", error);
+            // Show error message to user
+        }
+    };
 
 
     useEffect(() => {
@@ -90,11 +138,11 @@ export const Navbar = () => {
                         {/* Animated underline that grows from center */}
                         <div
                             className={`
-            h-full bg-red-500 
-            transform origin-center 
-            transition-all duration-300 ease-out
-            ${isHoveredHome ? 'scale-x-100' : 'scale-x-0'}
-          `}
+                            h-full bg-red-500 
+                            transform origin-center 
+                            transition-all duration-300 ease-out
+                            ${isHoveredHome ? 'scale-x-100' : 'scale-x-0'}
+                        `}
                         />
                     </div>
                 </div>
@@ -115,16 +163,14 @@ export const Navbar = () => {
                         {/* Animated underline that grows from center */}
                         <div
                             className={`
-            h-full bg-red-500 
-            transform origin-center 
-            transition-all duration-300 ease-out
-            ${isHoveredMarketplace ? 'scale-x-100' : 'scale-x-0'}
-          `}
+                            h-full bg-red-500 
+                            transform origin-center 
+                            transition-all duration-300 ease-out
+                            ${isHoveredMarketplace ? 'scale-x-100' : 'scale-x-0'}
+                        `}
                         />
                     </div>
                 </div>
-
-
                 <Sheet>
                     <SheetTrigger asChild>
                         <div className="relative inline-block">
@@ -136,110 +182,357 @@ export const Navbar = () => {
                                 Profile
                             </button>
 
-                            {/* Animated underline container */}
+                            {/* Animated underline */}
                             <div className="absolute bottom-0 left-0 w-full h-0.5 overflow-hidden">
-                                {/* Animated underline that grows from center */}
                                 <div
                                     className={`
-            h-full bg-red-500 
-            transform origin-center 
-            transition-all duration-300 ease-out
-            ${isHoveredProfile ? 'scale-x-100' : 'scale-x-0'}
-          `}
+                        h-full bg-red-500 
+                        transform origin-center 
+                        transition-all duration-300 ease-out
+                        ${isHoveredProfile ? 'scale-x-100' : 'scale-x-0'}
+                    `}
                                 />
                             </div>
                         </div>
                     </SheetTrigger>
 
-                    <SheetContent className="bg-[#222222] border-l border-gray-800 text-white w-full max-w-md sm:max-w-md">
-                        <SheetHeader className="mb-6">
-                            <SheetTitle className="text-2xl font-bold text-white">Your Profile</SheetTitle>
-                            <SheetDescription className="text-gray-400">
-                                Manage your account details and creator settings
-                            </SheetDescription>
-                        </SheetHeader>
+                    <SheetContent
+                        className="
+            bg-gradient-to-b 
+            from-black/90 
+            to-black/95
+            backdrop-blur-xl 
+            border-l 
+            border-red-500/30 
+            text-white 
+            w-full 
+            max-w-md 
+            sm:max-w-md 
+            custom-scrollbar
+            overflow-hidden
+            shadow-[0_0_15px_rgba(239,68,68,0.15)]
+        "
+                    >
+                        <div className="relative h-full flex flex-col">
+                            {/* Animated Gradient Accent Layer */}
+                            <div
+                                className="
+                    absolute 
+                    top-0 
+                    left-0 
+                    right-0 
+                    h-32 
+                    bg-gradient-to-r 
+                    from-red-500/20 
+                    via-purple-500/20 
+                    to-red-500/20 
+                    blur-3xl 
+                    opacity-60 
+                    -z-10
+                    animate-gradient-x
+                "
+                            />
 
-                        <div className="space-y-6">
-                            {/* Profile Header with Avatar */}
-                            <div className="flex items-center gap-4 py-4 border-b border-gray-800">
+                            <SheetHeader className="relative z-10 p-6">
+                                <SheetTitle className="text-2xl font-bold text-white">Your Profile</SheetTitle>
+                                <SheetDescription className="text-gray-300">
+                                    Manage your account details and stats
+                                </SheetDescription>
+                            </SheetHeader>
 
-                                <div>
-                                    <h3 className="text-xl font-semibold">{userData.name}</h3>
-                                    <p className="text-gray-400">@{userData.username}</p>
-                                </div>
-                            </div>
-
-                            {/* Account Information Form */}
-                            <div className="space-y-4">
-                                <h4 className="text-lg font-semibold text-gray-200">Account Information</h4>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm text-gray-400">Display Name</label>
-                                    <Input
-                                        value={userData.name}
-                                        onChange={(e) => setUserData({ ...userData, name: e.target.value })}
-                                        className="border border-gray-700 bg-[#181818] text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm text-gray-400">Username</label>
-                                    <Input
-                                        value={userData.username}
-                                        onChange={(e) => setUserData({ ...userData, username: e.target.value })}
-                                        className="border border-gray-700 bg-[#181818] text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm text-gray-400">Email Address</label>
-                                    <Input
-                                        value={userData.email}
-                                        onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                                        className="border border-gray-700 bg-[#181818] text-white p-3 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Subscription Details */}
-                            <div className="p-4 bg-[#181818] border border-gray-700 rounded-lg">
-                                <h4 className="text-lg font-semibold text-gray-200 mb-3">Subscription</h4>
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="text-white font-medium">Creator Pro</p>
-                                        <p className="text-gray-400 text-sm">Unlimited thumbnail tests</p>
+                            <div className="flex-grow overflow-y-auto px-6 space-y-8">
+                                {/* Profile Header - Keeping the same as requested */}
+                                <div className="flex items-center space-x-6 bg-white/5 p-4 rounded-xl border border-white/10">
+                                    {/* Avatar */}
+                                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-red-500/30">
+                                        {userData.avatarUrl ? (
+                                            <img
+                                                src={userData.avatarUrl}
+                                                alt="Profile"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                                                <User size={64} className="text-gray-400" />
+                                            </div>
+                                        )}
                                     </div>
-                                    <span className="bg-red-600 text-white text-xs px-3 py-1 rounded-full">Active</span>
+
+                                    {/* User Details */}
+                                    <div>
+                                        <h3 className="text-xl font-semibold">{userData.name}</h3>
+                                        <p className="text-gray-400 text-md mb-2">@{userData.username}</p>
+
+                                        {/* Reputation */}
+                                        <div className="flex items-center bg-white/10 px-3 py-1 rounded-full inline-flex hover:scale-105 transition-all duration-300">
+                                            <Star size={16} className="text-yellow-500 mr-1.5" />
+                                            <span className="font-medium text-yellow-100">
+                                                {userData.reputation} reputation
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <Button className="w-full mt-4 bg-[#333333] hover:bg-[#444444] text-white border border-gray-700">
-                                    Manage Subscription
-                                </Button>
+
+                                {/* Wallet Section - Redesigned */}
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
+                                        <Wallet size={16} className="mr-2" />
+                                        Wallet Overview
+                                    </h4>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-3 items-center justify-center bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-4 border border-white/10 hover:border-yellow-500/30 transition-all duration-300 shadow-sm">
+                                            <span className="text-xs text-gray-400 uppercase tracking-wider">
+                                                Pending Amount
+                                            </span>
+                                            <div className="flex items-center gap-2 justify-center text-lg font-semibold text-white">
+                                                <img src={solanaLogo} alt="Solana Logo" width="24" height="24" />
+                                                {userData.pending_amount}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-3 items-center justify-center bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-4 border border-white/10 hover:border-blue-500/30 transition-all duration-300 shadow-sm">
+                                                <span className="text-xs text-gray-400 uppercase tracking-wider">
+                                                    Locked Amount
+                                                </span>
+                                            <div className="flex items-center gap-2 justify-center text-lg font-semibold text-white">
+                                                <img src={solanaLogo} alt="Solana Logo" width="24" height="24" />
+                                                {userData.locked_amount}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+
+                                {/* Profile Management Section - Redesigned */}
+                                <div className="space-y-6">
+                                    <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
+                                        <User size={16} className="mr-2" />
+                                        Profile Management
+                                    </h4>
+
+                                    {/* Profile Picture */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <h5 className="text-sm text-white font-medium">Profile Picture</h5>
+                                                <p className="text-xs text-gray-400">Update your profile avatar</p>
+                                            </div>
+
+                                            <div className="flex items-center space-x-4">
+                                                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 shadow-md">
+                                                    {userData.avatarUrl ? (
+                                                        <img
+                                                            src={userData.avatarUrl}
+                                                            alt="Profile"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                                                            <User size={32} className="text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <input
+                                                    type="file"
+                                                    id="avatar-upload"
+                                                    className="hidden"
+                                                    onChange={(e) => {
+                                                        if (e.target.files && e.target.files[0]) {
+                                                            const file = e.target.files[0];
+                                                            const imageUrl = URL.createObjectURL(file);
+                                                            setUserData({ ...userData, avatarUrl: imageUrl, avatarFile: file });
+                                                        }
+                                                    }}
+                                                    ref={avatarInputRef}
+                                                />
+                                                <Button
+                                                    onClick={() => avatarInputRef.current?.click()}
+                                                    className="
+                                                        bg-gradient-to-r
+                                                        from-red-500/20
+                                                        to-red-500/30
+                                                        hover:from-red-500/30
+                                                        hover:to-red-500/40
+                                                        border
+                                                        border-red-500/30
+                                                        text-white
+                                                        shadow-sm
+                                                    "
+                                                    size="sm"
+                                                >
+                                                    <Camera size={14} />
+                                                    Change
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Thin Divider */}
+                                    <div className="h-px bg-white/10" />
+
+                                    {/* Display Name */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <h5 className="text-sm text-white font-medium">Display Name</h5>
+                                                <p className="text-xs text-gray-400">How you'll appear to others</p>
+                                            </div>
+                                            <Input
+                                                value={userData.name}
+                                                onChange={(e) => setUserData({ ...userData, name: e.target.value })}
+                                                className="
+                                                    w-60
+                                                    bg-white/5
+                                                    border
+                                                    border-white/20
+                                                    text-white
+                                                    focus:border-red-500/50
+                                                    focus:ring-2
+                                                    focus:ring-red-500/20
+                                                    shadow-sm
+                                                "
+                                                placeholder="Your display name"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Thin Divider */}
+                                    <div className="h-px bg-white/10" />
+
+                                    {/* Username */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <h5 className="text-sm text-white font-medium">Username</h5>
+                                                <p className="text-xs text-gray-400">Unique identifier for your account</p>
+                                            </div>
+                                            <div className="w-60">
+                                                <Input
+                                                    value={userData.username}
+                                                    className="
+                                                        bg-white/5
+                                                        border
+                                                        border-white/20
+                                                        text-white
+                                                        opacity-70
+                                                        shadow-sm
+                                                    "
+                                                    disabled
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1 text-right italic">Cannot be changed</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+
+                                {/* Performance Stats Section - Added */}
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
+                                        <CheckCircle size={16} className="mr-2" />
+                                        Performance Stats
+                                    </h4>
+
+                                    <div className="flex space-x-4">
+                                        <div className="flex bg-gradient-to-br from-green-500/10 to-green-500/20 rounded-xl px-4 py-2 border border-green-500/20">
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-xs text-gray-400">Completed</div>
+                                                <div className="text-green-400">{userData.task_completed}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex bg-gradient-to-br from-red-500/10 to-red-500/20 rounded-xl px-4 py-2 border border-red-500/20">
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-xs text-gray-400">Failed</div>
+                                                <div className="text-red-400">{userData.task_failed}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex bg-gradient-to-br from-blue-500/10 to-blue-500/20 rounded-xl px-4 py-2 border border-blue-500/20">
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-xs text-gray-400">Rate</div>
+                                                <div className="text-blue-400">{completionRate}%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+
+                            {/* Footer Actions */}
+                            <SheetFooter className="pt-4 px-6 mt-2 border-t border-white/10 bg-black/40 backdrop-blur-lg">
+                                <div className="flex justify-between w-full">
+                                    <SheetClose asChild>
+                                        <Button
+                                            variant="ghost"
+                                            className="
+                                                text-white 
+                                                bg-white/5
+                                                hover:bg-white/10 
+                                                border 
+                                                border-white/10
+                                                shadow-sm
+                                            "
+                                        >
+                                            <XCircle size={16} className="opacity-70" />
+                                            Cancel
+                                        </Button>
+                                    </SheetClose>
+                                    <Button
+                                        className="
+                                            bg-gradient-to-r
+                                            from-red-500/20
+                                            to-red-500/30
+                                            hover:from-red-500/30
+                                            hover:to-red-500/40
+                                            border 
+                                            border-red-500/30 
+                                            text-white 
+                                            shadow-sm
+                                        "
+                                        onClick={saveChanges}
+                                    >
+                                        <CheckCircle size={16} className="opacity-70" />
+                                        Save Changes
+                                    </Button>
+                                </div>
+                            </SheetFooter>
                         </div>
-
-                        <SheetFooter className="flex justify-between mt-6 pt-4 border-t border-gray-800">
-                            <Button className="bg-transparent hover:bg-[#333333] text-gray-400 border border-gray-700">
-                                Sign Out
-                            </Button>
-
-                            <SheetClose asChild>
-                                <Button className="bg-red-600 hover:bg-red-700 text-white">
-                                    Save Changes
-                                </Button>
-                            </SheetClose>
-                        </SheetFooter>
                     </SheetContent>
                 </Sheet>
 
                 {isclient && (
-                    <WalletMultiButton className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition">
-                        <motion.div
-                            className='flex gap-2 items-center'
-                            whileTap={{ scale: 0.8 }}>
-                            <Wallet size={18} />
-                            <span>Connect</span>
-                        </motion.div>
-                    </WalletMultiButton>
+                    <motion.div
+                        // Wrapper for overall button animation
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 10
+                        }}
+                        whileHover={{
+                            scale: 1.05,
+                            transition: { duration: 0.2 }
+                        }}
+                        whileTap={{
+                            scale: 0.95,
+                            transition: { duration: 0.1 }
+                        }}
+                        className="rounded-lg"
+                    >
+                        <UnifiedWalletButton
+                            overrideContent={
+                                <div className="flex items-center gap-2">
+                                    <Wallet size={18} />
+                                    <span>Connect</span>
+                                </div>
+                            }
+                            buttonClassName={`relative overflow-hidden backdrop-blur-md bg-red-500/20 !important border border-red-500/30 !importanttext-white px-6 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-red-500/30 hover:border-red-500/50 focus:outline-none focus:ring-2 focus:ring-red-500/50`}
+
+                        />
+                    </motion.div>
                 )}
             </div>
         </nav>
