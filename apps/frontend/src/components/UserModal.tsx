@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, AlertCircle } from "lucide-react";
-import { useState, useEffect, ReactNode } from "react";
+import { X, Check, AlertCircle, User, Camera } from "lucide-react";
+import React, { useState, useEffect, ReactNode, useRef } from "react";
 
 interface UsernameModalProps {
   isOpen: boolean;
@@ -17,10 +17,12 @@ export const UserModal = ({
 }: UsernameModalProps) => {
   // State for the username input
   const [username, setUsername] = useState("");
-  const [displayName , setDisplayName] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [hasFocused, setHasFocused] = useState(false);
+  const [profileImage, setProfileImage] = useState<string>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Animation variants for the modal container
   const modalVariants = {
@@ -76,15 +78,13 @@ export const UserModal = ({
 
     setIsChecking(true);
 
-    // Simulate API call with setTimeout
     setTimeout(() => {
       const isTaken = existingUsernames.includes(value);
       setIsAvailable(!isTaken);
       setIsChecking(false);
-    }, 500); // Simulate network delay
+    }, 500);
   };
 
-  // Effect to check username after typing stops
   useEffect(() => {
     const timer = setTimeout(() => {
       if (username && hasFocused) {
@@ -95,12 +95,10 @@ export const UserModal = ({
     return () => clearTimeout(timer);
   }, [username, hasFocused]);
 
-  // Handle username input change
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(e.target.value);
   };
 
-  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isAvailable && username) {
@@ -108,12 +106,25 @@ export const UserModal = ({
       onClose();
     }
   };
+  const handleImageChange = (e : React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Create a preview URL for the selected image
+      const imageUrl = URL.createObjectURL(file);
+      setProfileImage(imageUrl);
+      
+      // Here you would also typically prepare the file for upload
+      // You might want to store the actual file in another state variable
+      // const formData = new FormData();
+      // formData.append('profileImage', file);
+    }
+  };
 
   return (
     <AnimatePresence mode="wait">
       {isOpen && (
         <>
-          {/* Backdrop overlay */}
           <motion.div
             className="fixed inset-0 bg-black/75 backdrop-blur-md z-40"
             initial={{ opacity: 0 }}
@@ -122,8 +133,6 @@ export const UserModal = ({
             transition={{ duration: 0.3 }}
             onClick={onClose}
           />
-
-          {/* Modal container */}
           <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none px-4">
             <motion.div
               className="w-full max-w-md bg-[#181818]/80 border border-gray-700/50 shadow-2xl rounded-lg overflow-hidden pointer-events-auto text-white backdrop-blur-sm"
@@ -136,10 +145,7 @@ export const UserModal = ({
                 backdropFilter: "blur(8px)",
               }}
             >
-              {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-b from-gray-900/20 to-black/30 pointer-events-none" />
-
-              {/* Close button */}
               <motion.button
                 className="absolute right-4 top-4 p-2 text-gray-300 hover:text-white rounded-full hover:bg-white/10 transition z-10"
                 onClick={onClose}
@@ -149,8 +155,6 @@ export const UserModal = ({
               >
                 <X size={20} />
               </motion.button>
-
-              {/* Content */}
               <AnimatePresence mode="wait">
                 <motion.div
                   variants={contentVariants}
@@ -159,27 +163,63 @@ export const UserModal = ({
                   exit="exit"
                   className="relative z-0 p-6"
                 >
-                  <h2 className="text-xl font-semibold mb-6">Choose Your Username</h2>
+                  <h2 className="text-xl font-semibold mb-6">Set Up Your Profile</h2>
 
                   <form onSubmit={handleSubmit}>
+                    {/* Profile Image Selection */}
+                    <div className="flex justify-center mb-6">
+                      <div className="relative">
+                        <input
+                          type="file"
+                          id="profile-image"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          ref={fileInputRef}
+                        />
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-24 h-24 rounded-full bg-gray-800/70 border-2 border-dashed border-gray-600 hover:border-blue-500 flex items-center justify-center cursor-pointer transition-all overflow-hidden group"
+                        >
+                          {profileImage ? (
+                            <motion.img
+                              src={profileImage}
+                              className="w-full h-full object-cover"
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                              alt="Profile"
+                            />
+                          ) : (
+                            <User size={36} className="text-gray-500 group-hover:text-blue-400 transition-colors" />
+                          )}
+                        </div>
+                        <motion.div
+                          className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1.5 cursor-pointer hover:bg-blue-600 transition-colors border-2 border-gray-900"
+                          whileHover={{ scale: 1.1 }}
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Camera size={14} />
+                        </motion.div>
+                      </div>
+                    </div>
+
                     <div className="mb-6">
-                      <label htmlFor="display name" className="block text-sm font-medium mb-2">
+                      <label htmlFor="display-name" className="block text-sm font-medium mb-2">
                         Display Name
                       </label>
                       <input
                         type="text"
-                        id="display name"
-                        className={`w-full bg-gray-800/50 border ${isAvailable === true ? 'border-green-500' :
-                          isAvailable === false ? 'border-red-500' : 'border-gray-600'
-                          } rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        id="display-name"
+                        className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={displayName}
-                        onChange={handleUsernameChange}
-                        onFocus={() => setHasFocused(true)}
-                        placeholder="Enter username (min 3 characters)"
-                        minLength={3}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder="How others will see you"
+                        minLength={2}
                         required
                       />
-                      <label htmlFor="username" className="block text-sm font-medium mb-2">
+
+                      <label htmlFor="username" className="block text-sm font-medium mt-4 mb-2">
                         Username
                       </label>
                       <div className="relative">
