@@ -75,28 +75,103 @@ exports.userRouter.post('/connected', (req, res) => __awaiter(void 0, void 0, vo
     const token = jsonwebtoken_1.default.sign({ userID: isExisitingUser.id }, middleware_2.secreatKey);
     res.status(200).json({ token: token });
 }));
-// userRouter.post('/userDetails', async (req, res) => {
-//     const {}= req.body;
-//     // const isExisitingUser = await client.user.findFirst({
-//     //     where: {
-//     //         walletAddress: publicKey
-//     //     }
-//     // })
-//     if (!isExisitingUser) {
-//         const newUser = await client.user.create({
-//             data: {
-//                 walletAddress: publicKey
-//             }
-//         });
-//         console.log("old user not exist, creating a new user...")
-//         const token = jwt.sign({ userID: newUser.id }, secreatKey);
-//         res.status(200).json({ message: "new user created", token: token })
-//         return
-//     }
-//     console.log("user exist, initializing token.")
-//     const token = jwt.sign({ userID: isExisitingUser.id }, secreatKey);
-//     res.status(200).json({ token: token })
-// })
+exports.userRouter.post('/userData', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { name, usermame, avatar } = req.body;
+    //@ts-ignore
+    const userID = req.userID;
+    const isExisitingUser = yield db_1.client.user.findFirst({
+        where: {
+            id: userID
+        }
+    });
+    if (!isExisitingUser) {
+        console.log("No wallet associated");
+        res.status(400).json({ message: "No wallet connected" });
+        return;
+    }
+    console.log("submitting user data...");
+    const submittedData = yield db_1.client.user.create({
+        data: {
+            display_name: name,
+            username: usermame,
+            avatar: avatar
+        }
+    });
+    console.log("data submitted succesfully.");
+    res.status(200).json({ message: "Data uploaded succesfully" });
+}));
+exports.userRouter.get('/userData', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-ignore
+    const userID = req.userID;
+    const isExisitingUser = yield db_1.client.user.findUnique({
+        where: {
+            id: userID
+        }
+    });
+    if (!isExisitingUser) {
+        console.log("No wallet associated");
+        res.status(400).json({ message: "No wallet connected" });
+        return;
+    }
+    console.log("got data from server");
+    res.status(200).json({ message: "Data retrieved succesfully." });
+}));
+exports.userRouter.put('/userData', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { avatar, username } = req.body;
+    //@ts-ignore
+    const userID = req.userID;
+    const isExisitingUser = yield db_1.client.user.findUnique({
+        where: {
+            id: userID
+        }
+    });
+    if (!isExisitingUser) {
+        console.log("No wallet associated");
+        res.status(400).json({ message: "No wallet connected" });
+        return;
+    }
+    ;
+    if (avatar && !username) {
+        yield db_1.client.user.update({
+            data: {
+                avatar: avatar
+            },
+            where: {
+                id: userID
+            }
+        });
+        console.log("avatar updated");
+        res.status(200).json({ message: "avatar updated succesfully" });
+        return;
+    }
+    else if (!avatar && username) {
+        yield db_1.client.user.update({
+            data: {
+                username: username
+            },
+            where: {
+                id: userID
+            }
+        });
+        console.log("username updated");
+        res.status(200).json({ message: "username updated succesfully" });
+        return;
+    }
+    else {
+        yield db_1.client.user.update({
+            data: {
+                username: username,
+                avatar: avatar
+            },
+            where: {
+                id: userID
+            }
+        });
+        console.log("username & avatar updated");
+        res.status(200).json({ message: "Username & Avatar updated Succesfully" });
+        return;
+    }
+}));
 exports.userRouter.post('/task', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
