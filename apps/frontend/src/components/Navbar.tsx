@@ -9,7 +9,6 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { UserModal } from './UserModal'
 import { UnifiedWalletButton } from '@jup-ag/wallet-adapter'
 import { motion } from 'framer-motion'
-import { env } from 'process'
 import { toast } from 'sonner'
 
 
