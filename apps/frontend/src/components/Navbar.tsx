@@ -41,19 +41,18 @@ export const Navbar = () => {
     const [userData, setUserData] = useState<UserData>();
     const [token, setToken] = useState<string>('');
 
-    if(!userData) return
+    if (!userData) return
 
     const totalTasks = userData.task_completed + userData.task_failed;
     const completionRate = totalTasks > 0
         ? Math.round((userData.task_completed / totalTasks) * 100)
         : 0;
 
-   
     const saveChanges = async () => {
         try {
             const response = await axios.put('http://localhost:3001/v1/user/updateUserDetails', {
-                avatar : userData.avatarFile,
-                username : userData.username
+                avatar: userData.avatarFile,
+                username: userData.username
             })
             toast(response.data)
         } catch (error) {
@@ -62,16 +61,15 @@ export const Navbar = () => {
         }
     };
 
-
-    const getUserData = async() => {
-        const response  = await axios.get('http://localhsot:3001/v1/user/getUserData', {
-            headers : {
-                Authorization : `Bearer ${process.env.NEXT_PUBLIC_TOKEN}`
+    const getUserData = async () => {
+        const response = await axios.get('http://localhsot:3001/v1/user/getUserData', {
+            headers: {
+                Authorization: `Bearer ${process.env.NEXT_PUBLIC_TOKEN}`
             }
         });
 
-        const userResponse : UserData = response.data;
-        const userData = {...userResponse , avatarUrl : userResponse.avatarFile ? URL.createObjectURL(userResponse.avatarFile) : undefined}
+        const userResponse: UserData = response.data;
+        const userData = { ...userResponse, avatarUrl: userResponse.avatarFile ? URL.createObjectURL(userResponse.avatarFile) : undefined }
         setUserData(userData)
     }
 
@@ -295,9 +293,9 @@ export const Navbar = () => {
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-3 items-center justify-center bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-4 border border-white/10 hover:border-blue-500/30 transition-all duration-300 shadow-sm">
-                                                <span className="text-xs text-gray-400 uppercase tracking-wider">
-                                                    Locked Amount
-                                                </span>
+                                            <span className="text-xs text-gray-400 uppercase tracking-wider">
+                                                Locked Amount
+                                            </span>
                                             <div className="flex items-center gap-2 justify-center text-lg font-semibold text-white">
                                                 <img src={solanaLogo} alt="Solana Logo" width="24" height="24" />
                                                 {userData.locked_amount}

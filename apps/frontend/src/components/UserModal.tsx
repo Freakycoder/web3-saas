@@ -1,3 +1,4 @@
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, AlertCircle, User, Camera } from "lucide-react";
 import React, { useState, useEffect, ReactNode, useRef } from "react";
@@ -114,10 +115,9 @@ export const UserModal = ({
       const imageUrl = URL.createObjectURL(file);
       setProfileImage(imageUrl);
       
-      // Here you would also typically prepare the file for upload
-      // You might want to store the actual file in another state variable
-      // const formData = new FormData();
-      // formData.append('profileImage', file);
+      const response = await axios.post('http://localhsot:3001/v1/user/updateUserData' {
+        name : user
+    })
     }
   };
 

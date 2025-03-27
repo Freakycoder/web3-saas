@@ -39,7 +39,9 @@ userRouter.post('/connected', async (req, res) => {
     console.log("signed message recieved")
     console.log("processing the message...")
 
-    const isVerified = nacl.sign.detached.verify(message, new Uint8Array(signature.data), new PublicKey(publicKey).toBuffer());
+    const signatureBuffer = Buffer.from(signature, 'base64');
+
+    const isVerified = nacl.sign.detached.verify(message, new Uint8Array(signatureBuffer), new PublicKey(publicKey).toBuffer());
 
     if (!isVerified) {
         console.log("Signature not valid")
@@ -55,6 +57,32 @@ userRouter.post('/connected', async (req, res) => {
             walletAddress: publicKey
         }
     })
+
+    if (!isExisitingUser) {
+        const newUser = await client.user.create({
+            data: {
+                walletAddress: publicKey
+            }
+        });
+        console.log("old user not exist, creating a new user...")
+        const token = jwt.sign({ userID: newUser.id }, secreatKey);
+        res.status(200).json({ message: "new user created", token: token })
+        return
+    }
+    console.log("user exist, initializing token.")
+    const token = jwt.sign({ userID: isExisitingUser.id }, secreatKey);
+    res.status(200).json({ token: token })
+})
+
+userRouter.post('/userDetails', async (req, res) => {
+    const {}= req.body;
+
+
+    // const isExisitingUser = await client.user.findFirst({
+    //     where: {
+    //         walletAddress: publicKey
+    //     }
+    // })
 
     if (!isExisitingUser) {
         const newUser = await client.user.create({

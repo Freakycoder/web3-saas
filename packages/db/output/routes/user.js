@@ -46,7 +46,8 @@ exports.userRouter.post('/connected', (req, res) => __awaiter(void 0, void 0, vo
     const message = new TextEncoder().encode("Sign into mechanical turks");
     console.log("signed message recieved");
     console.log("processing the message...");
-    const isVerified = tweetnacl_1.default.sign.detached.verify(message, new Uint8Array(signature.data), new web3_js_1.PublicKey(publicKey).toBuffer());
+    const signatureBuffer = Buffer.from(signature, 'base64');
+    const isVerified = tweetnacl_1.default.sign.detached.verify(message, new Uint8Array(signatureBuffer), new web3_js_1.PublicKey(publicKey).toBuffer());
     if (!isVerified) {
         console.log("Signature not valid");
         res.status(403).json({ message: "incorrect signature or you do not own the wallet" });
@@ -74,6 +75,28 @@ exports.userRouter.post('/connected', (req, res) => __awaiter(void 0, void 0, vo
     const token = jsonwebtoken_1.default.sign({ userID: isExisitingUser.id }, middleware_2.secreatKey);
     res.status(200).json({ token: token });
 }));
+// userRouter.post('/userDetails', async (req, res) => {
+//     const {}= req.body;
+//     // const isExisitingUser = await client.user.findFirst({
+//     //     where: {
+//     //         walletAddress: publicKey
+//     //     }
+//     // })
+//     if (!isExisitingUser) {
+//         const newUser = await client.user.create({
+//             data: {
+//                 walletAddress: publicKey
+//             }
+//         });
+//         console.log("old user not exist, creating a new user...")
+//         const token = jwt.sign({ userID: newUser.id }, secreatKey);
+//         res.status(200).json({ message: "new user created", token: token })
+//         return
+//     }
+//     console.log("user exist, initializing token.")
+//     const token = jwt.sign({ userID: isExisitingUser.id }, secreatKey);
+//     res.status(200).json({ token: token })
+// })
 exports.userRouter.post('/task', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
