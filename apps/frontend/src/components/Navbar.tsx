@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-import { Camera, CheckCircle, CircleDollarSign, Scale, Star, User, Wallet, XCircle, Youtube, Lock } from 'lucide-react'
+import { Camera, CheckCircle, Star, User, Wallet, XCircle, Youtube, Ellipsis} from 'lucide-react'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet'
 import { useRouter } from 'next/router'
 import axios from 'axios'
@@ -39,21 +39,25 @@ export const Navbar = () => {
 
     const [userData, setUserData] = useState<UserData>();
     const [token, setToken] = useState<string>('');
+    const [isUsername, setIsUsername] = useState(Boolean)
 
-    if (!userData) return
-
-    const totalTasks = userData.task_completed + userData.task_failed;
-    const completionRate = totalTasks > 0
+    // Calculate completion rate only if userData exists
+    const totalTasks = userData ? (userData.task_completed + userData.task_failed) : 0;
+    const completionRate = totalTasks > 0 && userData
         ? Math.round((userData.task_completed / totalTasks) * 100)
         : 0;
 
     const saveChanges = async () => {
         try {
-            const response = await axios.put('http://localhost:3001/v1/user/updateUserDetails', {
-                avatar: userData.avatarFile,
-                username: userData.username
+            const response = await axios.put('http://localhost:3001/v1/user/userData', {
+                avatar: userData?.avatarFile,
+                username: userData?.username
+            }, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
             })
-            toast(response.data)
+            toast(response.data);
         } catch (error) {
             console.error("Error saving user data:", error);
             toast("Error Saving User Data")
@@ -61,14 +65,18 @@ export const Navbar = () => {
     };
 
     const getUserData = async () => {
-        const response = await axios.get('http://localhsot:3001/v1/user/getUserData', {
+        const response = await axios.get('http://localhost:3001/v1/user/userData', {
             headers: {
-                Authorization: `Bearer ${process.env.NEXT_PUBLIC_TOKEN}`
+                Authorization: `Bearer ${localStorage.getItem('token')}`
             }
         });
 
         const userResponse: UserData = response.data;
         const userData = { ...userResponse, avatarUrl: userResponse.avatarFile ? URL.createObjectURL(userResponse.avatarFile) : undefined }
+        if (!userData.username) {
+            setIsUsername(false)
+        }
+        setIsUsername(true)
         setUserData(userData)
     }
 
@@ -96,12 +104,10 @@ export const Navbar = () => {
                     publicKey: publicKey
                 })
 
-                setToken(response.data.token);
-                process.env.NEXT_PUBLIC_TOKEN = token;
-
-                console.log(token);
-                localStorage.setItem('token', token);
-                console.log("token recieved");
+                const receivedToken = response.data.token;
+                setToken(receivedToken);
+                localStorage.setItem('token', receivedToken);
+                console.log("token received");
             }
             catch (e) {
                 console.error("Wallet authentication failed:", e);
@@ -214,292 +220,340 @@ export const Navbar = () => {
             shadow-[0_0_15px_rgba(239,68,68,0.15)]
         "
                     >
-                        <div className="relative h-full flex flex-col">
-                            {/* Animated Gradient Accent Layer */}
-                            <div
-                                className="
-                    absolute 
-                    top-0 
-                    left-0 
-                    right-0 
-                    h-32 
-                    bg-gradient-to-r 
-                    from-red-500/20 
-                    via-purple-500/20 
-                    to-red-500/20 
-                    blur-3xl 
-                    opacity-60 
-                    -z-10
-                    animate-gradient-x
-                "
-                            />
+                        {isUsername ?
+                            <div className="relative h-full flex flex-col">
+                                <div
+                                    className="
+                        absolute 
+                        top-0 
+                        left-0 
+                        right-0 
+                        h-32 
+                        bg-gradient-to-r 
+                        from-red-500/20 
+                        via-purple-500/20 
+                        to-red-500/20 
+                        blur-3xl 
+                        opacity-60 
+                        -z-10
+                        animate-gradient-x
+                    "
+                                />
 
-                            <SheetHeader className="relative z-10 p-6">
-                                <SheetTitle className="text-2xl font-bold text-white">Your Profile</SheetTitle>
-                                <SheetDescription className="text-gray-300">
-                                    Manage your account details and stats
-                                </SheetDescription>
-                            </SheetHeader>
+                                <SheetHeader className="relative z-10 p-6">
+                                    <SheetTitle className="text-2xl font-bold text-white">Your Profile</SheetTitle>
+                                    <SheetDescription className="text-gray-300">
+                                        Manage your account details and stats
+                                    </SheetDescription>
+                                </SheetHeader>
 
-                            <div className="flex-grow overflow-y-auto px-6 space-y-8">
-                                {/* Profile Header - Keeping the same as requested */}
-                                <div className="flex items-center space-x-6 bg-white/5 p-4 rounded-xl border border-white/10">
-                                    {/* Avatar */}
-                                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-red-500/30">
-                                        {userData.avatarUrl ? (
-                                            <img
-                                                src={userData.avatarUrl}
-                                                alt="Profile"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                                                <User size={64} className="text-gray-400" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* User Details */}
-                                    <div>
-                                        <h3 className="text-xl font-semibold">{userData.name}</h3>
-                                        <p className="text-gray-400 text-md mb-2">@{userData.username}</p>
-
-                                        {/* Reputation */}
-                                        <div className="flex items-center bg-white/10 px-3 py-1 rounded-full hover:scale-105 transition-all duration-300">
-                                            <Star size={16} className="text-yellow-500 mr-1.5" />
-                                            <span className="font-medium text-yellow-100">
-                                                {userData.reputation} reputation
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Wallet Section - Redesigned */}
-                                <div className="space-y-4">
-                                    <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
-                                        <Wallet size={16} className="mr-2" />
-                                        Wallet Overview
-                                    </h4>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="flex flex-col gap-3 items-center justify-center bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-4 border border-white/10 hover:border-yellow-500/30 transition-all duration-300 shadow-sm">
-                                            <span className="text-xs text-gray-400 uppercase tracking-wider">
-                                                Pending Amount
-                                            </span>
-                                            <div className="flex items-center gap-2 justify-center text-lg font-semibold text-white">
-                                                <img src={solanaLogo} alt="Solana Logo" width="24" height="24" />
-                                                {userData.pending_amount}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col gap-3 items-center justify-center bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-4 border border-white/10 hover:border-blue-500/30 transition-all duration-300 shadow-sm">
-                                            <span className="text-xs text-gray-400 uppercase tracking-wider">
-                                                Locked Amount
-                                            </span>
-                                            <div className="flex items-center gap-2 justify-center text-lg font-semibold text-white">
-                                                <img src={solanaLogo} alt="Solana Logo" width="24" height="24" />
-                                                {userData.locked_amount}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Divider */}
-                                <div className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
-
-                                {/* Profile Management Section - Redesigned */}
-                                <div className="space-y-6">
-                                    <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
-                                        <User size={16} className="mr-2" />
-                                        Profile Management
-                                    </h4>
-
-                                    {/* Profile Picture */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <h5 className="text-sm text-white font-medium">Profile Picture</h5>
-                                                <p className="text-xs text-gray-400">Update your profile avatar</p>
-                                            </div>
-
-                                            <div className="flex items-center space-x-4">
-                                                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 shadow-md">
-                                                    {userData.avatarUrl ? (
-                                                        <img
-                                                            src={userData.avatarUrl}
-                                                            alt="Profile"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                                                            <User size={32} className="text-gray-400" />
-                                                        </div>
-                                                    )}
+                                <div className="flex-grow overflow-y-auto px-6 space-y-8">
+                                    {/* Profile Header - Keeping the same as requested */}
+                                    <div className="flex items-center space-x-6 bg-white/5 p-4 rounded-xl border border-white/10">
+                                        {/* Avatar */}
+                                        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-red-500/30">
+                                            {userData?.avatarUrl ? (
+                                                <img
+                                                    src={userData.avatarUrl}
+                                                    alt="Profile"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                                                    <User size={64} className="text-gray-400" />
                                                 </div>
-                                                <input
-                                                    type="file"
-                                                    id="avatar-upload"
-                                                    className="hidden"
+                                            )}
+                                        </div>
+
+                                        {/* User Details */}
+                                        <div>
+                                            <h3 className="text-xl font-semibold">{userData?.name}</h3>
+                                            <p className="text-gray-400 text-md mb-2">@{userData?.username}</p>
+
+                                            {/* Reputation */}
+                                            <div className="flex items-center bg-white/10 px-3 py-1 rounded-full hover:scale-105 transition-all duration-300">
+                                                <Star size={16} className="text-yellow-500 mr-1.5" />
+                                                <span className="font-medium text-yellow-100">
+                                                    {userData?.reputation} reputation
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Wallet Section - Redesigned */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
+                                            <Wallet size={16} className="mr-2" />
+                                            Wallet Overview
+                                        </h4>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="flex flex-col gap-3 items-center justify-center bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-4 border border-white/10 hover:border-yellow-500/30 transition-all duration-300 shadow-sm">
+                                                <span className="text-xs text-gray-400 uppercase tracking-wider">
+                                                    Pending Amount
+                                                </span>
+                                                <div className="flex items-center gap-2 justify-center text-lg font-semibold text-white">
+                                                    <img src={solanaLogo} alt="Solana Logo" width="24" height="24" />
+                                                    {userData?.pending_amount}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-3 items-center justify-center bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-4 border border-white/10 hover:border-blue-500/30 transition-all duration-300 shadow-sm">
+                                                <span className="text-xs text-gray-400 uppercase tracking-wider">
+                                                    Locked Amount
+                                                </span>
+                                                <div className="flex items-center gap-2 justify-center text-lg font-semibold text-white">
+                                                    <img src={solanaLogo} alt="Solana Logo" width="24" height="24" />
+                                                    {userData?.locked_amount}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Divider */}
+                                    <div className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+
+                                    {/* Profile Management Section - Redesigned */}
+                                    <div className="space-y-6">
+                                        <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
+                                            <User size={16} className="mr-2" />
+                                            Profile Management
+                                        </h4>
+
+                                        {/* Profile Picture */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-1">
+                                                    <h5 className="text-sm text-white font-medium">Profile Picture</h5>
+                                                    <p className="text-xs text-gray-400">Update your profile avatar</p>
+                                                </div>
+
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 shadow-md">
+                                                        {userData?.avatarUrl ? (
+                                                            <img
+                                                                src={userData.avatarUrl}
+                                                                alt="Profile"
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                                                                <User size={32} className="text-gray-400" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <input
+                                                        type="file"
+                                                        id="avatar-upload"
+                                                        className="hidden"
+                                                        onChange={(e) => {
+                                                            if (e.target.files && e.target.files[0]) {
+                                                                const file = e.target.files[0];
+                                                                const imageUrl = URL.createObjectURL(file);
+                                                                if (userData) {
+                                                                    setUserData({ ...userData, avatarUrl: imageUrl, avatarFile: file });
+                                                                }
+                                                            }
+                                                        }}
+                                                        ref={avatarInputRef}
+                                                    />
+                                                    <Button
+                                                        onClick={() => avatarInputRef.current?.click()}
+                                                        className="
+                                                            bg-gradient-to-r
+                                                            from-red-500/20
+                                                            to-red-500/30
+                                                            hover:from-red-500/30
+                                                            hover:to-red-500/40
+                                                            border
+                                                            border-red-500/30
+                                                            text-white
+                                                            shadow-sm
+                                                        "
+                                                        size="sm"
+                                                    >
+                                                        <Camera size={14} />
+                                                        Change
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Thin Divider */}
+                                        <div className="h-px bg-white/10" />
+
+                                        {/* Display Name */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-1">
+                                                    <h5 className="text-sm text-white font-medium">Display Name</h5>
+                                                    <p className="text-xs text-gray-400">How you'll appear to others</p>
+                                                </div>
+                                                <Input
+                                                    value={userData?.name}
                                                     onChange={(e) => {
-                                                        if (e.target.files && e.target.files[0]) {
-                                                            const file = e.target.files[0];
-                                                            const imageUrl = URL.createObjectURL(file);
-                                                            setUserData({ ...userData, avatarUrl: imageUrl, avatarFile: file });
+                                                        if (userData) {
+                                                            setUserData({ ...userData, name: e.target.value });
                                                         }
                                                     }}
-                                                    ref={avatarInputRef}
-                                                />
-                                                <Button
-                                                    onClick={() => avatarInputRef.current?.click()}
                                                     className="
-                                                        bg-gradient-to-r
-                                                        from-red-500/20
-                                                        to-red-500/30
-                                                        hover:from-red-500/30
-                                                        hover:to-red-500/40
-                                                        border
-                                                        border-red-500/30
-                                                        text-white
-                                                        shadow-sm
-                                                    "
-                                                    size="sm"
-                                                >
-                                                    <Camera size={14} />
-                                                    Change
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Thin Divider */}
-                                    <div className="h-px bg-white/10" />
-
-                                    {/* Display Name */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <h5 className="text-sm text-white font-medium">Display Name</h5>
-                                                <p className="text-xs text-gray-400">How you'll appear to others</p>
-                                            </div>
-                                            <Input
-                                                value={userData.name}
-                                                onChange={(e) => setUserData({ ...userData, name: e.target.value })}
-                                                className="
-                                                    w-60
-                                                    bg-white/5
-                                                    border
-                                                    border-white/20
-                                                    text-white
-                                                    focus:border-red-500/50
-                                                    focus:ring-2
-                                                    focus:ring-red-500/20
-                                                    shadow-sm
-                                                "
-                                                placeholder="Your display name"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Thin Divider */}
-                                    <div className="h-px bg-white/10" />
-
-                                    {/* Username */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <h5 className="text-sm text-white font-medium">Username</h5>
-                                                <p className="text-xs text-gray-400">Unique identifier for your account</p>
-                                            </div>
-                                            <div className="w-60">
-                                                <Input
-                                                    value={userData.username}
-                                                    className="
+                                                        w-60
                                                         bg-white/5
                                                         border
                                                         border-white/20
                                                         text-white
-                                                        opacity-70
+                                                        focus:border-red-500/50
+                                                        focus:ring-2
+                                                        focus:ring-red-500/20
                                                         shadow-sm
                                                     "
-                                                    disabled
+                                                    placeholder="Your display name"
                                                 />
-                                                <p className="text-xs text-gray-500 mt-1 text-right italic">Cannot be changed</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Thin Divider */}
+                                        <div className="h-px bg-white/10" />
+
+                                        {/* Username */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-1">
+                                                    <h5 className="text-sm text-white font-medium">Username</h5>
+                                                    <p className="text-xs text-gray-400">Unique identifier for your account</p>
+                                                </div>
+                                                <div className="w-60">
+                                                    <Input
+                                                        value={userData?.username}
+                                                        className="
+                                                            bg-white/5
+                                                            border
+                                                            border-white/20
+                                                            text-white
+                                                            opacity-70
+                                                            shadow-sm
+                                                        "
+                                                        disabled
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1 text-right italic">Cannot be changed</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Divider */}
+                                    <div className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+
+                                    {/* Performance Stats Section - Added */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
+                                            <CheckCircle size={16} className="mr-2" />
+                                            Performance Stats
+                                        </h4>
+
+                                        <div className="flex space-x-4">
+                                            <div className="flex bg-gradient-to-br from-green-500/10 to-green-500/20 rounded-xl px-4 py-2 border border-green-500/20">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-xs text-gray-400">Completed</div>
+                                                    <div className="text-green-400">{userData?.task_completed}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex bg-gradient-to-br from-red-500/10 to-red-500/20 rounded-xl px-4 py-2 border border-red-500/20">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-xs text-gray-400">Failed</div>
+                                                    <div className="text-red-400">{userData?.task_failed}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex bg-gradient-to-br from-blue-500/10 to-blue-500/20 rounded-xl px-4 py-2 border border-blue-500/20">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-xs text-gray-400">Rate</div>
+                                                    <div className="text-blue-400">{completionRate}%</div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Divider */}
-                                <div className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
-
-                                {/* Performance Stats Section - Added */}
-                                <div className="space-y-4">
-                                    <h4 className="text-sm font-medium text-red-400 uppercase tracking-wider flex items-center">
-                                        <CheckCircle size={16} className="mr-2" />
-                                        Performance Stats
-                                    </h4>
-
-                                    <div className="flex space-x-4">
-                                        <div className="flex bg-gradient-to-br from-green-500/10 to-green-500/20 rounded-xl px-4 py-2 border border-green-500/20">
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-xs text-gray-400">Completed</div>
-                                                <div className="text-green-400">{userData.task_completed}</div>
-                                            </div>
-                                        </div>
-                                        <div className="flex bg-gradient-to-br from-red-500/10 to-red-500/20 rounded-xl px-4 py-2 border border-red-500/20">
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-xs text-gray-400">Failed</div>
-                                                <div className="text-red-400">{userData.task_failed}</div>
-                                            </div>
-                                        </div>
-                                        <div className="flex bg-gradient-to-br from-blue-500/10 to-blue-500/20 rounded-xl px-4 py-2 border border-blue-500/20">
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-xs text-gray-400">Rate</div>
-                                                <div className="text-blue-400">{completionRate}%</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Footer Actions */}
-                            <SheetFooter className="pt-4 px-6 mt-2 border-t border-white/10 bg-black/40 backdrop-blur-lg">
-                                <div className="flex justify-between w-full">
-                                    <SheetClose asChild>
+                                {/* Footer Actions */}
+                                <SheetFooter className="pt-4 px-6 mt-2 border-t border-white/10 bg-black/40 backdrop-blur-lg">
+                                    <div className="flex justify-between w-full">
+                                        <SheetClose asChild>
+                                            <Button
+                                                variant="ghost"
+                                                className="
+                                                    text-white 
+                                                    bg-white/5
+                                                    hover:bg-white/10 
+                                                    border 
+                                                    border-white/10
+                                                    shadow-sm
+                                                "
+                                            >
+                                                <XCircle size={16} className="opacity-70" />
+                                                Cancel
+                                            </Button>
+                                        </SheetClose>
                                         <Button
-                                            variant="ghost"
                                             className="
-                                                text-white 
-                                                bg-white/5
-                                                hover:bg-white/10 
+                                                bg-gradient-to-r
+                                                from-red-500/20
+                                                to-red-500/30
+                                                hover:from-red-500/30
+                                                hover:to-red-500/40
                                                 border 
-                                                border-white/10
+                                                border-red-500/30 
+                                                text-white 
                                                 shadow-sm
                                             "
+                                            onClick={saveChanges}
                                         >
-                                            <XCircle size={16} className="opacity-70" />
-                                            Cancel
+                                            <CheckCircle size={16} className="opacity-70" />
+                                            Save Changes
                                         </Button>
-                                    </SheetClose>
-                                    <Button
-                                        className="
-                                            bg-gradient-to-r
-                                            from-red-500/20
-                                            to-red-500/30
-                                            hover:from-red-500/30
-                                            hover:to-red-500/40
-                                            border 
-                                            border-red-500/30 
-                                            text-white 
-                                            shadow-sm
-                                        "
-                                        onClick={saveChanges}
-                                    >
-                                        <CheckCircle size={16} className="opacity-70" />
-                                        Save Changes
-                                    </Button>
-                                </div>
-                            </SheetFooter>
-                        </div>
+                                    </div>
+                                </SheetFooter>
+                            </div>
+                            :
+                            <div className="relative h-full flex flex-col items-center justify-center space-y-4 p-6">
+                                {/* Thinking Person SVG */}
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 200 200"
+                                    className="w-40 h-40"
+                                >
+                                    <circle cx="100" cy="50" r="40" fill="#A0A0A0" />
+                                    <path
+                                        d="M100 90 Q100 130 70 160 Q100 170 130 160"
+                                        fill="none"
+                                        stroke="#A0A0A0"
+                                        strokeWidth="8"
+                                    />
+                                    <circle cx="90" cy="40" r="5" fill="white" />
+                                    <circle cx="110" cy="40" r="5" fill="white" />
+                                    <path
+                                        d="M85 50 Q100 60 115 50"
+                                        fill="none"
+                                        stroke="white"
+                                        strokeWidth="3"
+                                    />
+                                    <Ellipsis className="animate-pulse">
+                                        <circle cx="70" cy="120" r="5" fill="#6B7280" />
+                                        <circle cx="100" cy="120" r="5" fill="#6B7280" />
+                                        <circle cx="130" cy="120" r="5" fill="#6B7280" />
+                                    </Ellipsis>
+                                </svg>
+
+                                <p className="text-center text-gray-700 text-lg">
+                                    Unable to see profile info? Click the button below
+                                </p>
+
+                                <button
+                                    className="bg-red-400 border border-red-600 p-4 rounded-lg hover:bg-red-500 transition-colors"
+                                >
+                                    Update Profile
+                                </button>
+                            </div>
+                        }
+
                     </SheetContent>
                 </Sheet>
 
