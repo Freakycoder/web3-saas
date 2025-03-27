@@ -1,13 +1,20 @@
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, AlertCircle, User, Camera } from "lucide-react";
+import { X, Check, AlertCircle, User, Camera, FileEdit } from "lucide-react";
 import React, { useState, useEffect, ReactNode, useRef } from "react";
+import { toast } from "sonner";
 
 interface UsernameModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (username: string) => void;
   existingUsernames?: string[]; // For demo purposes, we'll use a list of existing usernames
+}
+
+interface UserData{
+  name : string,
+  username : string,
+  avatar : File
 }
 
 export const UserModal = ({
@@ -17,12 +24,11 @@ export const UserModal = ({
   existingUsernames = ["john_doe", "jane_smith", "dev_user", "admin", "test_user"]
 }: UsernameModalProps) => {
   // State for the username input
-  const [username, setUsername] = useState("");
-  const [displayName, setDisplayName] = useState('')
+ 
+  const [userData, setUserData] = useState<UserData>({username : '' , name : "" , avatar : new File([], "")}) // complete this part
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [hasFocused, setHasFocused] = useState(false);
-  const [profileImage, setProfileImage] = useState<string>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Animation variants for the modal container
@@ -88,36 +94,31 @@ export const UserModal = ({
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (username && hasFocused) {
-        checkUsername(username);
+      if (userData?.username && hasFocused) {
+        checkUsername(userData?.username);
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [username, hasFocused]);
+  }, [userData?.username, hasFocused]);
 
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUsername(e.target.value);
-  };
+  
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async(e: React.FormEvent) => {
     e.preventDefault();
-    if (isAvailable && username) {
-      onSubmit(username);
-      onClose();
-    }
+    const response = await axios.post('http://localhost:3001/v1/userData', {
+      name : userData.name,
+      username : userData.username,
+      avatar : userData.avatar
+    });
+
+    const responseData = response.data;
+    toast(responseData);
   };
   const handleImageChange = (e : React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
-      // Create a preview URL for the selected image
-      const imageUrl = URL.createObjectURL(file);
-      setProfileImage(imageUrl);
-      
-      const response = await axios.post('http://localhsot:3001/v1/user/updateUserData' {
-        name : user
-    })
+      setUserData(prevData => ({...prevData , avatar : file}))
     }
   };
 
@@ -181,9 +182,9 @@ export const UserModal = ({
                           onClick={() => fileInputRef.current?.click()}
                           className="w-24 h-24 rounded-full bg-gray-800/70 border-2 border-dashed border-gray-600 hover:border-blue-500 flex items-center justify-center cursor-pointer transition-all overflow-hidden group"
                         >
-                          {profileImage ? (
+                          {userData.avatar ? (
                             <motion.img
-                              src={profileImage}
+                              src={URL.createObjectURL(userData.avatar)}
                               className="w-full h-full object-cover"
                               initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
@@ -212,8 +213,8 @@ export const UserModal = ({
                         type="text"
                         id="display-name"
                         className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
+                        value={userData.name}
+                        onChange={(e) => setUserData(prevData => ({...prevData , name : e.target.value}))}
                         placeholder="How others will see you"
                         minLength={2}
                         required
@@ -229,8 +230,8 @@ export const UserModal = ({
                           className={`w-full bg-gray-800/50 border ${isAvailable === true ? 'border-green-500' :
                             isAvailable === false ? 'border-red-500' : 'border-gray-600'
                             } rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                          value={username}
-                          onChange={handleUsernameChange}
+                          value={userData.username}
+                          onChange={(e) => setUserData(prevData => ({...prevData , username : e.target.value}))}
                           onFocus={() => setHasFocused(true)}
                           placeholder="Enter username (min 3 characters)"
                           minLength={3}
@@ -291,7 +292,7 @@ export const UserModal = ({
                           </motion.p>
                         )}
 
-                        {(username.length > 0 && username.length < 3) && (
+                        {(userData.username.length > 0 && userData.username.length < 3) && (
                           <motion.p
                             className="text-yellow-400"
                             initial={{ opacity: 0, y: -5 }}
