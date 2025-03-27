@@ -74,30 +74,112 @@ userRouter.post('/connected', async (req, res) => {
     res.status(200).json({ token: token })
 })
 
-userRouter.post('/userDetails', async (req, res) => {
-    const {}= req.body;
+userRouter.post('/userData', userMiddleware, async (req, res) => {
+    const { name, usermame, avatar } = req.body;
+    //@ts-ignore
+    const userID = req.userID;
 
-
-    // const isExisitingUser = await client.user.findFirst({
-    //     where: {
-    //         walletAddress: publicKey
-    //     }
-    // })
+    const isExisitingUser = await client.user.findFirst({
+        where: {
+            id: userID
+        }
+    })
 
     if (!isExisitingUser) {
-        const newUser = await client.user.create({
-            data: {
-                walletAddress: publicKey
-            }
-        });
-        console.log("old user not exist, creating a new user...")
-        const token = jwt.sign({ userID: newUser.id }, secreatKey);
-        res.status(200).json({ message: "new user created", token: token })
+        console.log("No wallet associated")
+        res.status(400).json({ message: "No wallet connected" })
         return
     }
-    console.log("user exist, initializing token.")
-    const token = jwt.sign({ userID: isExisitingUser.id }, secreatKey);
-    res.status(200).json({ token: token })
+    console.log("submitting user data...")
+    const submittedData = await client.user.create({
+        data: {
+            display_name: name,
+            username: usermame,
+            avatar: avatar
+        }
+    })
+    console.log("data submitted succesfully.");
+    res.status(200).json({ message: "Data uploaded succesfully" })
+})
+
+userRouter.get('/userData', userMiddleware, async (req, res) => {
+    //@ts-ignore
+    const userID = req.userID;
+
+    const isExisitingUser = await client.user.findUnique({
+        where: {
+            id: userID
+        }
+    })
+
+    if (!isExisitingUser) {
+        console.log("No wallet associated")
+        res.status(400).json({ message: "No wallet connected" })
+        return
+    }
+
+    console.log("got data from server");
+    res.status(200).json({ message: "Data retrieved succesfully." })
+})
+
+userRouter.put('/userData', userMiddleware, async (req, res) => {
+
+    const { avatar, username } = req.body;
+    //@ts-ignore
+    const userID = req.userID;
+
+    const isExisitingUser = await client.user.findUnique({
+        where: {
+            id: userID
+        }
+    })
+
+    if (!isExisitingUser) {
+        console.log("No wallet associated")
+        res.status(400).json({ message: "No wallet connected" })
+        return
+    };
+
+    if (avatar && !username) {
+        await client.user.update({
+            data: {
+                avatar: avatar
+            },
+            where: {
+                id: userID
+            }
+        })
+        console.log("avatar updated")
+        res.status(200).json({message :"avatar updated succesfully"})
+        return
+    }
+    else if (!avatar && username){
+        await client.user.update({
+            data: {
+                username: username
+            },
+            where: {
+                id: userID
+            }
+        })
+        console.log("username updated")
+        res.status(200).json({message :"username updated succesfully"})
+        return
+    }
+    else {
+        await client.user.update({
+            data: {
+                username: username,
+                avatar : avatar
+            },
+            where: {
+                id: userID
+            }
+        })
+        console.log("username & avatar updated")
+        res.status(200).json({message :"Username & Avatar updated Succesfully"})
+        return
+    }
 })
 
 userRouter.post('/task', userMiddleware, async (req, res) => {
@@ -335,15 +417,15 @@ userRouter.post('/manageReputation', userMiddleware, async (req, res) => {
         let correctSubmissionCount = 0;
         let totalSubmissionCount = userSubmissions.length;
 
-        userSubmissions.map((submission)=>{
-            if(submission.completion_time >= 30){
+        userSubmissions.map((submission) => {
+            if (submission.completion_time >= 30) {
                 correctSubmissionCount += 1
             }
         });
-    
+
         let reputationIncrease = 0;
         let reputationDecrease = (totalSubmissionCount - correctSubmissionCount) * 5;
-    
+
         if (correctSubmissionCount == 3) {
             reputationIncrease = 10;
         } else if (correctSubmissionCount == 5) {
@@ -351,7 +433,7 @@ userRouter.post('/manageReputation', userMiddleware, async (req, res) => {
         } else if (correctSubmissionCount > 5) {
             reputationIncrease = 30;
         }
-    
+
         if (reputationIncrease > 0) {
             await client.user.update({
                 where: { id: user_id },
@@ -362,7 +444,7 @@ userRouter.post('/manageReputation', userMiddleware, async (req, res) => {
             return
         }
 
-        if(reputationDecrease > 0 ){
+        if (reputationDecrease > 0) {
             await client.user.update({
                 where: { id: user_id },
                 data: {
