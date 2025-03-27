@@ -110,6 +110,10 @@ export const UserModal = ({
       name : userData.name,
       username : userData.username,
       avatar : userData.avatar
+    }, {
+      headers : {
+        Authorization : `Bearer ${localStorage.getItem('token')}`
+      }
     });
 
     const responseData = response.data;
