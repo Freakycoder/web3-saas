@@ -9,13 +9,14 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { UserModal } from './UserModal'
 import { UnifiedWalletButton } from '@jup-ag/wallet-adapter'
 import { motion } from 'framer-motion'
+import { env } from 'process'
+import { toast } from 'sonner'
 
 
 interface UserData {
     id: string;
     username: string;
     name: string; // This maps to display_name in your DB
-    walletAddress: string;
     reputation: number;
     task_completed: number;
     task_failed: number;
@@ -37,41 +38,42 @@ export const Navbar = () => {
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const solanaLogo = "https://assets.coingecko.com/coins/images/4128/large/solana.png";
 
-    // Make sure your userData state includes these properties
-    const [userData, setUserData] = useState<UserData>({
-        id: "", // Would be populated from your auth system
-        username: "user123",
-        name: "User Name", // This is display_name in your DB
-        walletAddress: "0x123...abc",
-        reputation: 100,
-        task_completed: 12,
-        task_failed: 3,
-        pending_amount: 0.025,
-        locked_amount: 0.158
-    });
-
+    const [userData, setUserData] = useState<UserData>();
     const [token, setToken] = useState<string>('');
+
+    if(!userData) return
+
     const totalTasks = userData.task_completed + userData.task_failed;
     const completionRate = totalTasks > 0
         ? Math.round((userData.task_completed / totalTasks) * 100)
         : 0;
 
-
-
-    // Handle saving changes
-    const saveChanges = async (): Promise<void> => {
+   
+    const saveChanges = async () => {
         try {
-            // Here you would call your API to update the user data
-            console.log("Saving user data:", userData);
-            // Example API call:
-            // await updateUserProfile(userData);
-
-            // You might want to show a success message here
+            const response = await axios.put('http://localhost:3001/v1/user/updateUserDetails', {
+                avatar : userData.avatarFile,
+                username : userData.username
+            })
+            toast(response.data)
         } catch (error) {
             console.error("Error saving user data:", error);
-            // Show error message to user
+            toast("Error Saving User Data")
         }
     };
+
+
+    const getUserData = async() => {
+        const response  = await axios.get('http://localhsot:3001/v1/user/getUserData', {
+            headers : {
+                Authorization : `Bearer ${process.env.NEXT_PUBLIC_TOKEN}`
+            }
+        });
+
+        const userResponse : UserData = response.data;
+        const userData = {...userResponse , avatarUrl : userResponse.avatarFile ? URL.createObjectURL(userResponse.avatarFile) : undefined}
+        setUserData(userData)
+    }
 
 
     useEffect(() => {
@@ -93,11 +95,12 @@ export const Navbar = () => {
                 if (!signature) return
 
                 const response = await axios.post('http://localhost:3001/v1/user/connected', {
-                    signature: signature,
+                    signature: Buffer.from(signature).toString('base64'),
                     publicKey: publicKey
                 })
 
                 setToken(response.data.token);
+                process.env.NEXT_PUBLIC_TOKEN = token;
 
                 console.log(token);
                 localStorage.setItem('token', token);
@@ -178,6 +181,7 @@ export const Navbar = () => {
                                 className="px-4 py-2 font-medium text-base focus:outline-none"
                                 onMouseEnter={() => setIsHoveredProfile(true)}
                                 onMouseLeave={() => setIsHoveredProfile(false)}
+                                onClick={getUserData}
                             >
                                 Profile
                             </button>
@@ -264,7 +268,7 @@ export const Navbar = () => {
                                         <p className="text-gray-400 text-md mb-2">@{userData.username}</p>
 
                                         {/* Reputation */}
-                                        <div className="flex items-center bg-white/10 px-3 py-1 rounded-full inline-flex hover:scale-105 transition-all duration-300">
+                                        <div className="flex items-center bg-white/10 px-3 py-1 rounded-full hover:scale-105 transition-all duration-300">
                                             <Star size={16} className="text-yellow-500 mr-1.5" />
                                             <span className="font-medium text-yellow-100">
                                                 {userData.reputation} reputation
