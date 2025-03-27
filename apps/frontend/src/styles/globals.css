@@ -22,11 +22,11 @@ body {
 
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #4a4a4a #1a1a1a;
+  scrollbar-color: black #1a1a1a;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+  width: 4px;
   height: 8px;
 }
 
@@ -42,21 +42,6 @@ body {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #606060;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #181818;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #3a3a3a;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #4a4a4a;
 }
 
 @layer base {
