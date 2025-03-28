@@ -3,33 +3,32 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, AlertCircle, User, Camera, FileEdit } from "lucide-react";
 import React, { useState, useEffect, ReactNode, useRef } from "react";
 import { toast } from "sonner";
+import { Buffer } from 'buffer';
+import ConfirmButton from "./ConfirmButton";
 
 interface UsernameModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (username: string) => void;
-  existingUsernames?: string[]; // For demo purposes, we'll use a list of existing usernames
 }
 
-interface UserData{
-  name : string,
-  username : string,
-  avatar : File
+interface UserData {
+  name: string,
+  username: string,
+  avatar: File | null
 }
 
 export const UserModal = ({
   isOpen,
   onClose,
-  onSubmit,
-  existingUsernames = ["john_doe", "jane_smith", "dev_user", "admin", "test_user"]
 }: UsernameModalProps) => {
   // State for the username input
- 
-  const [userData, setUserData] = useState<UserData>({username : '' , name : "" , avatar : new File([], "")}) // complete this part
+
+  const [userData, setUserData] = useState<UserData>({ username: '', name: "", avatar: null })
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [hasFocused, setHasFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [existingUsernames, setExistingUsernames] = useState<string[]>()
 
   // Animation variants for the modal container
   const modalVariants = {
@@ -86,13 +85,25 @@ export const UserModal = ({
     setIsChecking(true);
 
     setTimeout(() => {
-      const isTaken = existingUsernames.includes(value);
+      const isTaken = existingUsernames?.includes(value);
       setIsAvailable(!isTaken);
       setIsChecking(false);
     }, 500);
   };
 
   useEffect(() => {
+
+    const getUsernames = async () => {
+      const response = await axios.get('http://localhost:3001/v1/user/getUsernames' , {
+        headers : {
+          Authorization : `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      const existingUsernames = response.data;
+      setExistingUsernames(existingUsernames)
+    }
+    getUsernames()
+
     const timer = setTimeout(() => {
       if (userData?.username && hasFocused) {
         checkUsername(userData?.username);
@@ -102,27 +113,31 @@ export const UserModal = ({
     return () => clearTimeout(timer);
   }, [userData?.username, hasFocused]);
 
-  
+  const fileToBuffer = async (file: File): Promise<Buffer> => {
+    const arrayBuffer = await file.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  };
 
-  const handleSubmit = async(e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const response = await axios.post('http://localhost:3001/v1/userData', {
-      name : userData.name,
-      username : userData.username,
-      avatar : userData.avatar
+    const response = await axios.post('http://localhost:3001/v1/user/userData', {
+      name: userData.name,
+      username: userData.username,
+      avatar: fileToBuffer(userData.avatar!)
     }, {
-      headers : {
-        Authorization : `Bearer ${localStorage.getItem('token')}`
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
       }
     });
 
     const responseData = response.data;
     toast(responseData);
   };
-  const handleImageChange = (e : React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setUserData(prevData => ({...prevData , avatar : file}))
+      setUserData(prevData => ({ ...prevData, avatar: file }))
     }
   };
 
@@ -218,7 +233,7 @@ export const UserModal = ({
                         id="display-name"
                         className="w-full bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={userData.name}
-                        onChange={(e) => setUserData(prevData => ({...prevData , name : e.target.value}))}
+                        onChange={(e) => setUserData(prevData => ({ ...prevData, name: e.target.value }))}
                         placeholder="How others will see you"
                         minLength={2}
                         required
@@ -235,7 +250,7 @@ export const UserModal = ({
                             isAvailable === false ? 'border-red-500' : 'border-gray-600'
                             } rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                           value={userData.username}
-                          onChange={(e) => setUserData(prevData => ({...prevData , username : e.target.value}))}
+                          onChange={(e) => setUserData(prevData => ({ ...prevData, username: e.target.value }))}
                           onFocus={() => setHasFocused(true)}
                           placeholder="Enter username (min 3 characters)"
                           minLength={3}
@@ -316,14 +331,7 @@ export const UserModal = ({
                       >
                         Cancel
                       </button>
-                      <button
-                        type="submit"
-                        className={`px-4 py-2 rounded-lg transition ${isAvailable ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600/50 cursor-not-allowed'
-                          }`}
-                        disabled={!isAvailable}
-                      >
-                        Confirm
-                      </button>
+                      <ConfirmButton isAvailable = {true} onClose={onClose}/>
                     </div>
                   </form>
                 </motion.div>
