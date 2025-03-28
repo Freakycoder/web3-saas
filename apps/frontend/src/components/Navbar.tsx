@@ -592,7 +592,7 @@ export const Navbar = () => {
                 )}
             </div>
         </nav>
-        {isUsername && <UserModal isOpen={isOpen} onClose={() => { setisOpen(false) }} />}
+        
     </>
 }
 
