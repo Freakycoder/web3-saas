@@ -119,7 +119,7 @@ exports.userRouter.get('/userData', middleware_1.userMiddleware, (req, res) => _
         res.status(400).json({ message: "No wallet connected" });
         return;
     }
-    console.log("got data from server");
+    console.log("got user data from server");
     res.status(200).json(isExisitingUser);
 }));
 exports.userRouter.put('/userData', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {

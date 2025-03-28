@@ -1,157 +1,145 @@
-import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import { X, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Toast types and their corresponding icons
-const toastIcons = {
-  success: CheckCircle,
-  error: AlertCircle,
-  info: Info,
-  warning: AlertTriangle,
+// Toast types and their corresponding icons and colors
+const TOAST_TYPES = {
+  success: {
+    icon: CheckCircle,
+    bgColor: 'bg-green-500',
+    borderColor: 'border-green-600'
+  },
+  failed: { // Using "failed" instead of "error" as requested
+    icon: AlertCircle,
+    bgColor: 'bg-red-500',
+    borderColor: 'border-red-600'
+  },
+  warning: {
+    icon: AlertTriangle,
+    bgColor: 'bg-yellow-500',
+    borderColor: 'border-yellow-600'
+  }
 };
 
-// Toast context to manage global toast state
-const ToastContext = React.createContext(null);
+type ToastType = 'success' | 'failed' | 'warning';
 
-// Toast Provider Component
-export const Toaster = ({ position = 'bottom-right', richColors = false, expand = false, duration = 4000 }) => {
-  const [toasts, setToasts] = useState([]);
+interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+}
 
-  const toast = React.useCallback((options) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    setToasts(currentToasts => [
-      ...currentToasts, 
-      { 
-        id, 
-        ...options,
-        type: options.type || 'default'
-      }
-    ]);
-    return id;
-  }, []);
+interface ToastContextType {
+  toast: (type: ToastType, message: string) => void;
+  dismiss: (id: string) => void;
+}
 
-  const dismiss = React.useCallback((toastId) => {
-    setToasts(currentToasts => 
-      currentToasts.filter(t => t.id !== toastId)
-    );
-  }, []);
+// Create context with default values
+const ToastContext = createContext<ToastContextType>({
+  toast: () => {},
+  dismiss: () => {}
+});
 
-  const dismissAll = React.useCallback(() => {
-    setToasts([]);
-  }, []);
+// Export the context consumer hook
+export const useToast = () => useContext(ToastContext);
 
-  return (
-    <ToastContext.Provider value={{ toast, dismiss, dismissAll }}>
-      {/* Toast Container */}
-      <div 
-        className={`fixed z-[100] flex flex-col gap-2 p-4 
-          ${position === 'top-right' ? 'top-0 right-0' : 
-            position === 'top-left' ? 'top-0 left-0' : 
-            position === 'bottom-left' ? 'bottom-0 left-0' : 
-            'bottom-0 right-0'} 
-          ${expand ? 'w-full max-w-md' : 'w-auto'}`}
-      >
-        {toasts.map((toast) => (
-          <ToastComponent 
-            key={toast.id} 
-            {...toast} 
-            richColors={richColors}
-            duration={duration}
-            onDismiss={() => dismiss(toast.id)}
-          />
-        ))}
-      </div>
-    </ToastContext.Provider>
-  );
-};
-
-// Individual Toast Component
-const ToastComponent = ({
-  title, 
-  description, 
-  type = 'default', 
-  richColors = false,
-  duration = 4000,
+// Toast Component
+const ToastComponent: React.FC<{
+  id: string;
+  type: ToastType;
+  message: string;
+  duration: number;
+  onDismiss: () => void;
+}> = ({
+  id,
+  type,
+  message,
+  duration,
   onDismiss,
 }) => {
-  const [isVisible, setIsVisible] = useState(true);
-  const Icon = toastIcons[type];
+  const toastConfig = TOAST_TYPES[type];
+  const Icon = toastConfig.icon;
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsVisible(false);
       onDismiss();
     }, duration);
 
     return () => clearTimeout(timer);
   }, [duration, onDismiss]);
 
-  if (!isVisible) return null;
-
-  const getColorClasses = () => {
-    if (richColors) {
-      switch(type) {
-        case 'success': return 'bg-green-500 text-white';
-        case 'error': return 'bg-red-500 text-white';
-        case 'warning': return 'bg-yellow-500 text-black';
-        case 'info': return 'bg-blue-500 text-white';
-        default: return 'bg-gray-800 text-white';
-      }
-    }
-    return 'bg-white border shadow-lg';
-  };
-
   return (
-    <div 
+    <motion.div 
+      initial={{ opacity: 0, x: 100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 100 }}
+      transition={{ duration: 0.3 }}
       className={`
-        flex items-center gap-3 p-4 rounded-lg 
-        ${getColorClasses()}
-        animate-in slide-in-from-right
-        relative
+        flex items-center gap-3 p-4 rounded-lg shadow-lg text-white
+        ${toastConfig.bgColor} border ${toastConfig.borderColor}
+        w-full max-w-md
       `}
+      role="alert"
     >
-      {Icon && <Icon className="w-5 h-5" />}
-      <div className="flex-1">
-        {title && <div className="font-semibold">{title}</div>}
-        {description && <div className="text-sm opacity-80">{description}</div>}
-      </div>
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      <div className="flex-1">{message}</div>
       <button 
-        onClick={onDismiss} 
-        className="absolute top-2 right-2 hover:opacity-75"
+        onClick={onDismiss}
+        className="hover:opacity-75 p-1 flex-shrink-0 hover:bg-black/10 rounded-full transition-colors"
+        aria-label="Close"
       >
         <X className="w-4 h-4" />
       </button>
-    </div>
+    </motion.div>
   );
 };
 
-// Custom hook to use toast
-export const useToast = () => {
-  const context = React.useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-};
+// Toaster Provider Component
+export const Toaster: React.FC<{ duration?: number }> = ({ 
+  duration = 4000 
+}) => {
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
-// Example Usage Component
-export const ToastDemo = () => {
-  const { toast } = useToast();
+  // Create a toast
+  const toast = useCallback((type: ToastType, message: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    console.log(`Creating toast: ${type} - ${message}`); // Debug log
+    setToasts(current => [...current, { id, type, message }]);
+    return id;
+  }, []);
+
+  // Dismiss a toast
+  const dismiss = useCallback((id: string) => {
+    setToasts(current => current.filter(t => t.id !== id));
+  }, []);
 
   return (
-    <div className="flex gap-2">
-      <button 
-        onClick={() => toast({ title: 'Success', description: 'Operation completed', type: 'success' })}
-        className="bg-green-500 text-white p-2 rounded"
-      >
-        Success Toast
-      </button>
-      <button 
-        onClick={() => toast({ title: 'Error', description: 'Something went wrong', type: 'error' })}
-        className="bg-red-500 text-white p-2 rounded"
-      >
-        Error Toast
-      </button>
-    </div>
+    <ToastContext.Provider value={{ toast, dismiss }}>
+      {/* Fixed Toast Container at Bottom Right */}
+      <div className="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 max-w-md w-full pointer-events-none">
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.div 
+              key={toast.id} 
+              className="pointer-events-auto"
+              layout
+              initial={{ opacity: 0, y: 20, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+              <ToastComponent 
+                id={toast.id} 
+                type={toast.type} 
+                message={toast.message} 
+                duration={duration}
+                onDismiss={() => dismiss(toast.id)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </ToastContext.Provider>
   );
 };
 

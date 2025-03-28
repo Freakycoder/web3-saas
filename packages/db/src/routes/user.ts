@@ -126,7 +126,7 @@ userRouter.get('/userData', userMiddleware, async (req, res) => {
         return
     }
 
-    console.log("got data from server");
+    console.log("got user data from server");
     res.status(200).json(isExisitingUser)
 })
 
