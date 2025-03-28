@@ -75,8 +75,9 @@ export const Navbar = () => {
         const userData = { ...userResponse, avatarUrl: userResponse.avatarFile ? URL.createObjectURL(userResponse.avatarFile) : undefined }
         if (!userData.username) {
             setIsUsername(false)
+        }else{
+            setIsUsername(true)
         }
-        setIsUsername(true)
         setUserData(userData)
     }
 
@@ -591,7 +592,7 @@ export const Navbar = () => {
                 )}
             </div>
         </nav>
-        {token && <UserModal isOpen={isOpen} onClose={() => { setisOpen(false) }} onSubmit={() => { }} />}
+        {isUsername && <UserModal isOpen={isOpen} onClose={() => { setisOpen(false) }} />}
     </>
 }
 
