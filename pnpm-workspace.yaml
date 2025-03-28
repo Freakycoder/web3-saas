@@ -1,0 +1,5 @@
+packages:
+  - "packages/*"   # Adjust based on your actual workspace structure
+  - "apps/*"       # If you have an "apps" folder
+  - "libs/*"       # If you have a "libs" folder
+  - "eslint-config"

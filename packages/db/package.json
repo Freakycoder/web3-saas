@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "pnpm prisma generate && tsc",
-    "node": "node output/index.js"
+    "node": "node output/index.js",
+     "start": "node output/index.js"
   },
   "exports": {
     "./src/client": "./src/index.ts"
