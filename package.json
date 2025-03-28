@@ -4,8 +4,8 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "node" : "turbo node",
-    "start" : "turbo run node dev",
+    "node": "turbo node",
+    "start": "turbo run node dev",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
@@ -21,5 +21,10 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "next": "15.1.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  }
 }
