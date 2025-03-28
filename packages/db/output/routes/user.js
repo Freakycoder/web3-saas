@@ -24,6 +24,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const middleware_2 = require("../middleware");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const s3_presigned_post_1 = require("@aws-sdk/s3-presigned-post");
+const middleware_3 = require("../middleware");
 exports.userRouter = (0, express_1.Router)();
 const endpoint = (0, web3_js_1.clusterApiUrl)("devnet");
 const connection = new web3_js_1.Connection(endpoint, "confirmed");
@@ -75,7 +76,7 @@ exports.userRouter.post('/connected', (req, res) => __awaiter(void 0, void 0, vo
     const token = jsonwebtoken_1.default.sign({ userID: isExisitingUser.id }, middleware_2.secreatKey);
     res.status(200).json({ token: token });
 }));
-exports.userRouter.post('/userData', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.userRouter.post('/userData', middleware_3.upload.single('avatar'), middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, usermame, avatar } = req.body;
     //@ts-ignore
     const userID = req.userID;
@@ -89,12 +90,17 @@ exports.userRouter.post('/userData', middleware_1.userMiddleware, (req, res) => 
         res.status(400).json({ message: "No wallet connected" });
         return;
     }
+    let avatarBytes = null;
+    if (req.file) { // multer is responsible for adding file field in the req object.
+        // Converting file to buffer
+        avatarBytes = req.file.buffer;
+    }
     console.log("submitting user data...");
-    const submittedData = yield db_1.client.user.create({
+    yield db_1.client.user.create({
         data: {
             display_name: name,
             username: usermame,
-            avatar: avatar
+            avatar: avatarBytes
         }
     });
     console.log("data submitted succesfully.");
@@ -114,7 +120,7 @@ exports.userRouter.get('/userData', middleware_1.userMiddleware, (req, res) => _
         return;
     }
     console.log("got data from server");
-    res.status(200).json({ message: "Data retrieved succesfully." });
+    res.status(200).json(isExisitingUser);
 }));
 exports.userRouter.put('/userData', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { avatar, username } = req.body;
@@ -171,6 +177,17 @@ exports.userRouter.put('/userData', middleware_1.userMiddleware, (req, res) => _
         res.status(200).json({ message: "Username & Avatar updated Succesfully" });
         return;
     }
+}));
+exports.userRouter.get('/getUsernames', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-ignore
+    const userID = req.userID;
+    const usernames = yield db_1.client.user.findMany({
+        select: {
+            username: true,
+        },
+    });
+    console.log("got usernames from db");
+    res.status(200).json(usernames);
 }));
 exports.userRouter.post('/task', middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;

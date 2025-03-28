@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Request, Router } from "express";
 import { client } from "../db";
 import { submissionSchema, taskSchema, updateBalanceSchema } from "../types";
 import { userMiddleware } from "../middleware";
@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken"
 import { secreatKey } from "../middleware";
 import { S3Client } from "@aws-sdk/client-s3";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
+import { upload } from "../middleware"
 
 export const userRouter = Router();
 
@@ -74,7 +75,7 @@ userRouter.post('/connected', async (req, res) => {
     res.status(200).json({ token: token })
 })
 
-userRouter.post('/userData', userMiddleware, async (req, res) => {
+userRouter.post('/userData', upload.single('avatar'), userMiddleware, async (req, res) => {
     const { name, usermame, avatar } = req.body;
     //@ts-ignore
     const userID = req.userID;
@@ -90,12 +91,19 @@ userRouter.post('/userData', userMiddleware, async (req, res) => {
         res.status(400).json({ message: "No wallet connected" })
         return
     }
+
+    let avatarBytes: Buffer | null = null;
+    if (req.file) { // multer is responsible for adding file field in the req object.
+      // Converting file to buffer
+      avatarBytes = req.file.buffer;
+    }
+
     console.log("submitting user data...")
-    const submittedData = await client.user.create({
+    await client.user.create({
         data: {
             display_name: name,
             username: usermame,
-            avatar: avatar
+            avatar: avatarBytes
         }
     })
     console.log("data submitted succesfully.");
@@ -119,7 +127,7 @@ userRouter.get('/userData', userMiddleware, async (req, res) => {
     }
 
     console.log("got data from server");
-    res.status(200).json({ message: "Data retrieved succesfully." })
+    res.status(200).json(isExisitingUser)
 })
 
 userRouter.put('/userData', userMiddleware, async (req, res) => {
@@ -150,10 +158,10 @@ userRouter.put('/userData', userMiddleware, async (req, res) => {
             }
         })
         console.log("avatar updated")
-        res.status(200).json({message :"avatar updated succesfully"})
+        res.status(200).json({ message: "avatar updated succesfully" })
         return
     }
-    else if (!avatar && username){
+    else if (!avatar && username) {
         await client.user.update({
             data: {
                 username: username
@@ -163,23 +171,37 @@ userRouter.put('/userData', userMiddleware, async (req, res) => {
             }
         })
         console.log("username updated")
-        res.status(200).json({message :"username updated succesfully"})
+        res.status(200).json({ message: "username updated succesfully" })
         return
     }
     else {
         await client.user.update({
             data: {
                 username: username,
-                avatar : avatar
+                avatar: avatar
             },
             where: {
                 id: userID
             }
         })
         console.log("username & avatar updated")
-        res.status(200).json({message :"Username & Avatar updated Succesfully"})
+        res.status(200).json({ message: "Username & Avatar updated Succesfully" })
         return
     }
+})
+
+userRouter.get('/getUsernames', userMiddleware, async (req, res) => {
+    //@ts-ignore
+    const userID = req.userID;
+
+    const usernames = await client.user.findMany({
+        select: {
+          username: true, 
+        },
+      });
+
+    console.log("got usernames from db");
+    res.status(200).json(usernames)
 })
 
 userRouter.post('/task', userMiddleware, async (req, res) => {
