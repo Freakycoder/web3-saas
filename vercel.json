@@ -1,0 +1,6 @@
+{
+    "buildCommand": "turbo run build",
+    "installCommand": "pnpm install", 
+    "framework": "nextjs",
+    "outputDirectory": "apps/frontend/.next"
+  }
